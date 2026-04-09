@@ -522,6 +522,165 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);font-size:14p
   .dtbl th:nth-child(3),.dtbl td:nth-child(3){display:none}
   .hdr-logo-sub{display:none}
 }
+
+/* ── DASHBOARD HEADER ── */
+.dash-header{
+  display:grid;
+  grid-template-columns:1fr 260px;
+  gap:0;
+  margin-bottom:20px;
+  background:var(--surface);
+  border:1px solid var(--brd);
+  border-radius:var(--r-xl);
+  overflow:hidden;
+  position:relative;
+}
+/* glows */
+.dash-header::before{
+  content:'';position:absolute;
+  top:-80px;right:160px;
+  width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle,rgba(124,106,247,.13) 0%,transparent 65%);
+  pointer-events:none;z-index:0;
+}
+.dash-header::after{
+  content:'';position:absolute;
+  bottom:-80px;left:20px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(91,168,245,.07) 0%,transparent 65%);
+  pointer-events:none;z-index:0;
+}
+
+/* LEFT PANEL */
+.dash-left{
+  padding:22px 24px;
+  display:flex;flex-direction:column;gap:0;
+  position:relative;z-index:1;
+}
+.dash-date-row{
+  display:flex;align-items:baseline;gap:10px;
+  margin-bottom:16px;
+}
+.dash-weekday{
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  color:var(--accent2);text-transform:uppercase;letter-spacing:.1em;
+}
+.dash-datestr{
+  font-family:var(--display);font-size:13px;font-weight:600;
+  color:var(--txt2);
+}
+
+.dash-ring-row{display:flex;align-items:center;gap:18px;margin-bottom:18px}
+.dash-ring-wrap{flex-shrink:0}
+.dash-ring{width:80px;height:80px;filter:drop-shadow(0 0 12px rgba(124,106,247,.25))}
+.dash-ring-label{display:none}
+.dash-ring-info{}
+.dash-title{
+  font-family:var(--display);font-size:22px;font-weight:800;
+  color:var(--txt);line-height:1.1;margin-bottom:4px;
+}
+.dash-title span{color:var(--accent2)}
+.dash-sub{
+  font-family:var(--mono);font-size:10px;color:var(--txt3);
+  margin-bottom:12px;letter-spacing:.02em;
+}
+.dash-progress-bar{
+  width:100%;height:4px;background:var(--surface3);
+  border-radius:2px;overflow:hidden;margin-bottom:14px;
+}
+.dash-progress-fill{
+  height:4px;border-radius:2px;
+  background:linear-gradient(90deg,var(--accent) 0%,var(--accent2) 50%,var(--green) 100%);
+  transition:width 1.2s cubic-bezier(.4,0,.2,1);
+}
+.dash-pills{display:flex;flex-wrap:wrap;gap:5px}
+.dash-pill{
+  font-family:var(--mono);font-size:10px;
+  padding:4px 10px;border-radius:20px;font-weight:500;
+  display:flex;align-items:center;gap:5px;
+}
+.dash-pill::before{content:'';width:6px;height:6px;border-radius:50%}
+.pill-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(224,92,110,.2)}
+.pill-red::before{background:var(--red)}
+.pill-blue{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(91,168,245,.2)}
+.pill-blue::before{background:var(--blue)}
+.pill-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(78,203,141,.2)}
+.pill-green::before{background:var(--green)}
+.pill-muted{background:var(--surface2);color:var(--txt3);border:1px solid var(--brd)}
+.pill-muted::before{background:var(--txt3)}
+
+/* RIGHT PANEL */
+.dash-right{
+  border-left:1px solid var(--brd);
+  background:var(--surface2);
+  padding:20px 18px;
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;
+}
+.dash-next-title{
+  font-family:var(--mono);font-size:9px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--txt3);margin-bottom:12px;
+  display:flex;align-items:center;gap:6px;
+}
+.dash-next-title::before{
+  content:'';width:16px;height:1px;background:var(--brd2);display:inline-block;
+}
+.dash-next-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:var(--r-sm);
+  cursor:pointer;transition:all .18s;
+  margin-bottom:3px;border:1px solid transparent;
+}
+.dash-next-item:last-child{margin-bottom:0}
+.dash-next-item:hover{background:var(--surface3);border-color:var(--brd)}
+.dash-next-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor}
+.dash-next-info{flex:1;display:flex;flex-direction:column;min-width:0}
+.dash-next-num{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  color:var(--txt2);flex-shrink:0;
+}
+.dash-next-desc{
+  font-size:11px;color:var(--txt3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.dash-next-days{
+  font-family:var(--mono);font-size:11px;font-weight:700;
+  flex-shrink:0;text-align:right;
+}
+.dash-right-footer{
+  margin-top:auto;padding-top:12px;
+  border-top:1px solid var(--brd);
+  font-family:var(--mono);font-size:9px;color:var(--txt3);
+  letter-spacing:.04em;text-align:center;
+}
+
+/* ── FILTERS BAR ── */
+.filters-bar{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+.filters-scroll{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.search-wrap{position:relative;flex-shrink:0}
+.search-icon{
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  color:var(--txt3);display:flex;align-items:center;pointer-events:none;
+}
+.search-inp{
+  font-family:var(--mono);font-size:11px;
+  height:32px;padding:0 10px 0 30px;
+  border:1px solid var(--brd);border-radius:20px;
+  background:var(--surface2);color:var(--txt);
+  outline:none;width:160px;transition:all .2s;
+}
+.search-inp:focus{border-color:var(--accent);width:200px;background:var(--surface)}
+.search-inp::placeholder{color:var(--txt3)}
+
+/* ── LEGEND BAR ── */
+.legend-bar{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+
+@media(max-width:580px){
+  .dash-header{grid-template-columns:1fr}
+  .dash-right{border-left:none;border-top:1px solid var(--brd);padding-left:0;padding-top:14px}
+  .search-inp{width:130px}.search-inp:focus{width:150px}
+}
+
 datalist{display:none}
 </style>
 </head>
@@ -765,34 +924,120 @@ function renderDL(){
 // ── STATS ──
 function renderStats(){
   if(!dados.length) return '';
-  const red=dados.filter(t=>urgencia(t)==='red').length;
-  const and=dados.filter(t=>emAndamento(t)).length;
-  const ok=dados.filter(t=>urgencia(t)==='grn').length;
-  const nv=dados.filter(t=>urgencia(t)==='gry').length;
-  return`<div class="stats-row">
-    <div class="stat-card"><div class="stat-n c-red">${red}</div><div class="stat-l">Urgente</div></div>
-    <div class="stat-card"><div class="stat-n c-blue">${and}</div><div class="stat-l">Em andamento</div></div>
-    <div class="stat-card"><div class="stat-n c-green">${ok}</div><div class="stat-l">Em dia</div></div>
-    <div class="stat-card"><div class="stat-n c-mut">${nv}</div><div class="stat-l">Nunca feito</div></div>
+
+  const total  = dados.length;
+  const red    = dados.filter(t=>urgencia(t)==='red').length;
+  const and_   = dados.filter(t=>emAndamento(t)).length;
+  const ok     = dados.filter(t=>urgencia(t)==='grn').length;
+  const nv     = dados.filter(t=>urgencia(t)==='gry').length;
+  const concl  = dados.filter(t=>!!ultConcl(t)).length;
+  const pct    = total ? Math.round(concl/total*100) : 0;
+
+  // SVG ring
+  const r=32, circ=2*Math.PI*r;
+  const dash_=circ*(pct/100), gap_=circ-dash_;
+
+  // próximos a indicar (não em andamento, ordenados por urgência + dias)
+  const proximos = dados
+    .filter(t=>!emAndamento(t))
+    .sort((a,b)=>prioridade(b)-prioridade(a))
+    .slice(0,4);
+
+  // data
+  const agora = new Date();
+  const dias  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const semana= dias[agora.getDay()];
+  const data  = `${agora.getDate()} ${meses[agora.getMonth()]} ${agora.getFullYear()}`;
+
+  return `
+  <div class="dash-header">
+    <div class="dash-left">
+      <div class="dash-date-row">
+        <span class="dash-weekday">${semana}</span>
+        <span class="dash-datestr">${data}</span>
+      </div>
+
+      <div class="dash-ring-row">
+        <div class="dash-ring-wrap">
+          <svg class="dash-ring" viewBox="0 0 80 80">
+            <defs>
+              <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#7c6af7"/>
+                <stop offset="100%" stop-color="#4ecb8d"/>
+              </linearGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="2" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--surface3)" stroke-width="5"/>
+            <circle cx="40" cy="40" r="${r}" fill="none" stroke="url(#rg)" stroke-width="5"
+              stroke-linecap="round" filter="url(#glow)"
+              stroke-dasharray="${dash_.toFixed(1)} ${gap_.toFixed(1)}"
+              transform="rotate(-90 40 40)"/>
+            <text x="40" y="37" text-anchor="middle" fill="var(--txt)"
+              style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">${pct}%</text>
+            <text x="40" y="50" text-anchor="middle" fill="var(--txt3)"
+              style="font-family:'DM Mono',monospace;font-size:7px">cobertos</text>
+          </svg>
+        </div>
+        <div class="dash-ring-info">
+          <div class="dash-title">Bom <span>Jesus</span></div>
+          <div class="dash-sub">S-13 · Ano de Serviço 2026 · ${total} territórios</div>
+          <div class="dash-progress-bar">
+            <div class="dash-progress-fill" style="width:${pct}%"></div>
+          </div>
+          <div class="dash-pills">
+            ${red?`<span class="dash-pill pill-red">${red} urgente${red!==1?'s':''}</span>`:''}
+            ${and_?`<span class="dash-pill pill-blue">${and_} andamento</span>`:''}
+            ${ok?`<span class="dash-pill pill-green">${ok} em dia</span>`:''}
+            ${nv?`<span class="dash-pill pill-muted">${nv} nunca feito${nv!==1?'s':''}</span>`:''}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-right">
+      <div class="dash-next-title">Próximos a indicar</div>
+      ${proximos.map(t=>{
+        const dl=diasLbl(t), urg=urgencia(t);
+        const dot=urg==='red'?'var(--red)':urg==='ora'?'var(--orange)':urg==='grn'?'var(--green)':'var(--txt3)';
+        const dayColor=urg==='red'?'var(--red)':urg==='ora'?'var(--orange)':urg==='grn'?'var(--green)':'var(--txt3)';
+        return`<div class="dash-next-item" onclick="abrirTerritorio('${t.n}')">
+          <div class="dash-next-dot" style="background:${dot};color:${dot}"></div>
+          <div class="dash-next-info">
+            <span class="dash-next-num">${t.n}</span>
+            <span class="dash-next-desc">${t.desc}</span>
+          </div>
+          <span class="dash-next-days" style="color:${dayColor}">${dl.txt}</span>
+        </div>`;
+      }).join('')}
+      <div class="dash-right-footer">toque para ir direto ao território</div>
+    </div>
   </div>`;
 }
 
 // ── BAIRRO CHIPS ──
 function bairroChips(){
   const bs=[...new Set(dados.map(t=>t.desc).filter(Boolean))];
-  return`<div class="filters">
-    <div style="display:flex;gap:5px;flex-wrap:wrap" id="bchips">
+  return`
+  <div class="filters-bar">
+    <div class="filters-scroll" id="bchips">
       <div class="chip${bFiltro===''?' on':''}" onclick="setBairro('')">Todos</div>
       ${bs.map(b=>`<div class="chip${bFiltro===b?' on':''}" onclick="setBairro('${b}')">${b.replace('Vitalino Fonseca','V.Fonseca').replace('Bom Jesus','B.Jesus')}</div>`).join('')}
     </div>
-    <div class="sbox"><input type="text" id="srch" placeholder="Buscar nº, bairro ou pessoa…" oninput="renderIndicar()"></div>
+    <div class="search-wrap">
+      <div class="search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+      <input class="search-inp" type="text" id="srch" placeholder="Buscar território…" oninput="renderIndicar()">
+    </div>
   </div>
-  <div class="legend">
+  <div class="legend-bar">
     <div class="leg"><div class="ldot" style="background:var(--red)"></div>+90 dias</div>
-    <div class="leg"><div class="ldot" style="background:var(--ora)"></div>60–90 dias</div>
-    <div class="leg"><div class="ldot" style="background:var(--grn)"></div>&lt;60 dias</div>
-    <div class="leg"><div class="ldot" style="background:var(--blu)"></div>Em andamento</div>
-    <div class="leg"><div class="ldot" style="background:#ccc"></div>Nunca feito</div>
+    <div class="leg"><div class="ldot" style="background:var(--orange)"></div>60–90 dias</div>
+    <div class="leg"><div class="ldot" style="background:var(--green)"></div>&lt;60 dias</div>
+    <div class="leg"><div class="ldot" style="background:var(--blue)"></div>Em andamento</div>
+    <div class="leg"><div class="ldot" style="background:var(--brd2)"></div>Nunca feito</div>
   </div>`;
 }
 
@@ -907,6 +1152,7 @@ function renderIndicar(){
 function esc(s){ return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 function toggleT(n){ const b=document.getElementById('body-'+n),c=document.getElementById('chv-'+n); const o=b.classList.toggle('open'); c.classList.toggle('open',o); c.textContent=o?'▼':'▶'; }
 function setBairro(b){ bFiltro=b; renderIndicar(); }
+function abrirTerritorio(n){ bFiltro=''; renderIndicar(); setTimeout(()=>{ const el=document.getElementById('body-'+n); if(el){ el.closest('.titem').scrollIntoView({behavior:'smooth',block:'start'}); setTimeout(()=>{ if(!el.classList.contains('open')) toggleT(n); },400); } },100); }
 function updD(n,i,f,v){ const t=dados.find(x=>x.n===n); if(t) t.designacoes[i][f]=v; }
 function addD(n){ const t=dados.find(x=>x.n===n); if(t){ t.designacoes.push({nome:'',desig:hoje(),concl:''}); renderIndicar(); setTimeout(()=>{ toggleT(n); document.getElementById('body-'+n).scrollIntoView({behavior:'smooth',block:'nearest'}); },50); } }
 function delD(n,i){ const t=dados.find(x=>x.n===n); if(t){ t.designacoes.splice(i,1); svTerr(n); } }
