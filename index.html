@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Registro de Territórios</title>
+<title>Territórios Congregacionais - S13</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -1463,25 +1463,28 @@ function importXLSX(file){ if(!file)return; const r=new FileReader(); r.onload=e
 function parseXLSX(ab){
   try{
     const wb=XLSX.read(ab,{type:'array',cellDates:true});
-    // Try aba 2026 first, fallback to first sheet
-    // Find year tab (any 4-digit year) or use first sheet
     const wsName = wb.SheetNames.find(n=>/^20\d{2}$/.test(n)) || wb.SheetNames[0];
     const ws=wb.Sheets[wsName];
     if(!ws){ xlsxStatus('Nenhuma aba encontrada no arquivo',false); return; }
 
-    // Read all rows as raw arrays - dates as strings yyyy-mm-dd
-    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,dateNF:'yyyy-mm-dd'});
+    // raw:true preserves Date objects from cellDates:true
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
 
-    const fmtDt=s=>{
-      if(!s||String(s).trim()==='')return'';
-      const str=String(s).trim();
-      // Already yyyy-mm-dd
+    const fmtDt=v=>{
+      if(v==null||v==='')return'';
+      // JS Date object (cellDates:true gives these)
+      if(v instanceof Date){
+        if(isNaN(v))return'';
+        const y=v.getFullYear(),m=String(v.getMonth()+1).padStart(2,'0'),d=String(v.getDate()).padStart(2,'0');
+        return`${y}-${m}-${d}`;
+      }
+      const str=String(v).trim();
+      if(!str)return'';
       if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
-      // dd/mm/yyyy
-      const m=str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      if(m)return`${m[3]}-${m[2]}-${m[1]}`;
-      // Try JS Date parse
-      try{ const d=new Date(str); return isNaN(d)?'':d.toISOString().slice(0,10); }catch(e){ return''; }
+      const m1=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if(m1)return`${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
+      try{ const d=new Date(str); if(!isNaN(d))return d.toISOString().slice(0,10); }catch(e){}
+      return'';
     };
 
     const isTerritoryRow=r=>{
