@@ -1021,7 +1021,7 @@ function renderDL(){
 }
 
 // ── STATS ──
-function renderStats(){
+function renderDashHeader(){
   if(!dados.length) return '';
 
   const total  = dados.length;
@@ -1238,7 +1238,7 @@ function renderIndicar(){
     </div>`;
     return;
   }
-  document.getElementById('statsBar').innerHTML=renderStats();
+  document.getElementById('statsBar').innerHTML=renderDashHeader();
   const busca=(document.getElementById('srch')||{}).value?.toLowerCase()||'';
   let lista=[...dados];
   if(bFiltro) lista=lista.filter(t=>t.desc===bFiltro);
