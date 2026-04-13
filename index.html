@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Registro de Territórios - S13</title>
+<title>Registro de Territórios</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -1962,11 +1962,6 @@ function toast(m,err=false){
   el.textContent=m;
   el.classList.toggle('err-t', err);
   el.classList.add('show'); setTimeout(()=>{ el.classList.remove('show'); el.classList.remove('err-t'); },2300);
-}
-
-
-  fecharSetup();
-  renderAll();
 }
 
 // ── INIT ──
