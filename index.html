@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Territórios Congregacionais - S13</title>
+<title>Registro de Territórios - S13</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -683,85 +683,101 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);font-size:14p
 }
 
 
-/* ── SETUP SCREEN ── */
-.setup-overlay{
+
+
+
+/* ── LOGIN SCREEN ── */
+.login-screen{
   position:fixed;inset:0;z-index:9999;
   background:var(--bg);
   display:flex;align-items:center;justify-content:center;
   padding:20px;
-  animation:fadeIn .3s ease;
 }
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.setup-card{
+.login-card{
   background:var(--surface);
   border:1px solid var(--brd);
   border-radius:var(--r-xl);
-  padding:36px 32px;
-  width:100%;max-width:440px;
-  position:relative;
-  overflow:hidden;
+  padding:40px 36px;
+  width:100%;max-width:420px;
+  position:relative;overflow:hidden;
 }
-.setup-card::before{
-  content:'';position:absolute;
-  top:-80px;right:-80px;width:220px;height:220px;border-radius:50%;
+.login-card::before{
+  content:'';position:absolute;top:-100px;right:-100px;
+  width:280px;height:280px;border-radius:50%;
   background:radial-gradient(circle,rgba(124,106,247,.15) 0%,transparent 65%);
   pointer-events:none;
 }
-.setup-icon{font-size:36px;margin-bottom:16px}
-.setup-title{
-  font-family:var(--display);font-size:24px;font-weight:800;
+.login-card::after{
+  content:'';position:absolute;bottom:-80px;left:-60px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(78,203,141,.08) 0%,transparent 65%);
+  pointer-events:none;
+}
+.login-logo{
+  display:flex;align-items:center;gap:10px;margin-bottom:24px;
+  position:relative;z-index:1;
+}
+.login-logo-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),#b794f4);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.login-logo-text{font-family:var(--display);font-size:16px;font-weight:800;color:var(--txt)}
+.login-logo-sub{font-family:var(--mono);font-size:9px;color:var(--txt3);letter-spacing:.06em;margin-top:1px}
+.login-title{
+  font-family:var(--display);font-size:22px;font-weight:800;
   color:var(--txt);margin-bottom:6px;line-height:1.1;
+  position:relative;z-index:1;
 }
-.setup-title span{color:var(--accent2)}
-.setup-sub{
-  font-family:var(--mono);font-size:11px;color:var(--txt3);
-  margin-bottom:28px;line-height:1.6;
+.login-sub{
+  font-family:var(--mono);font-size:10px;color:var(--txt3);
+  margin-bottom:28px;line-height:1.7;position:relative;z-index:1;
 }
-.setup-section{margin-bottom:20px}
-.setup-section-title{
-  font-family:var(--mono);font-size:9px;font-weight:500;
-  text-transform:uppercase;letter-spacing:.09em;
-  color:var(--txt3);margin-bottom:10px;
-  display:flex;align-items:center;gap:8px;
+.login-field{margin-bottom:14px;position:relative;z-index:1}
+.login-field label{
+  display:block;font-family:var(--mono);font-size:9px;
+  color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;
 }
-.setup-section-title::after{content:'';flex:1;height:1px;background:var(--brd)}
-.setup-field{margin-bottom:10px;display:flex;flex-direction:column;gap:4px}
-.setup-field label{font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em}
-.setup-inp{
-  font-family:var(--sans);font-size:13px;height:38px;
-  padding:0 12px;border:1px solid var(--brd);
-  border-radius:var(--r-sm);background:var(--surface2);
-  color:var(--txt);outline:none;width:100%;
-  transition:border-color .2s;
+.login-inp{
+  width:100%;font-family:var(--mono);font-size:12px;
+  height:40px;padding:0 12px;
+  border:1px solid var(--brd);border-radius:var(--r-sm);
+  background:var(--surface2);color:var(--txt);
+  outline:none;transition:border-color .2s;
 }
-.setup-inp:focus{border-color:var(--accent)}
-.setup-inp::placeholder{color:var(--txt3)}
-.setup-optional{
-  font-family:var(--mono);font-size:9px;color:var(--txt3);
-  margin-top:4px;line-height:1.5;
-}
-.setup-btn{
-  width:100%;height:44px;
+.login-inp:focus{border-color:var(--accent);background:var(--surface3)}
+.login-inp::placeholder{color:var(--txt3)}
+.login-btn{
+  width:100%;height:46px;margin-top:6px;
   font-family:var(--display);font-size:14px;font-weight:700;
   background:var(--accent);border:none;border-radius:var(--r-md);
   color:#fff;cursor:pointer;transition:all .2s;
-  margin-top:8px;letter-spacing:.01em;
+  position:relative;z-index:1;letter-spacing:.01em;
+  display:flex;align-items:center;justify-content:center;gap:8px;
 }
-.setup-btn:hover{background:var(--accent2);transform:translateY(-1px)}
-.setup-btn:active{transform:translateY(0)}
-.setup-skip{
-  display:block;text-align:center;margin-top:12px;
-  font-family:var(--mono);font-size:10px;color:var(--txt3);
-  cursor:pointer;transition:color .15s;
-}
-.setup-skip:hover{color:var(--txt)}
-.setup-err{
+.login-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,106,247,.3)}
+.login-btn:active{transform:translateY(0)}
+.login-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.login-err{
   font-family:var(--mono);font-size:10px;color:var(--red);
-  background:var(--red-bg);border:1px solid rgba(224,92,110,.2);
-  border-radius:var(--r-sm);padding:8px 12px;margin-top:8px;
-  display:none;
+  background:var(--red-bg);border:1px solid rgba(224,92,110,.25);
+  border-radius:var(--r-sm);padding:9px 12px;margin-top:10px;
+  display:none;line-height:1.5;position:relative;z-index:1;
 }
-.setup-err.show{display:block}
+.login-err.show{display:block}
+.login-hint{
+  font-family:var(--mono);font-size:9px;color:var(--txt3);
+  margin-top:16px;line-height:1.7;text-align:center;
+  position:relative;z-index:1;
+}
+.login-hint a{color:var(--accent2);text-decoration:none}
+.login-spinner{
+  width:16px;height:16px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;
+  animation:spin .7s linear infinite;display:none;
+}
+.login-spinner.show{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 datalist{display:none}
 </style>
@@ -874,21 +890,6 @@ datalist{display:none}
 
 <!-- ══ CONFIG ══ -->
 <div class="panel" id="panel-config">
-  <div class="ccard">
-    <div class="ctit">Congregação</div>
-    <p class="chint" style="margin-bottom:10px">Nome que aparece no cabeçalho do app.</p>
-    <div class="crow"><label>Nome</label><input class="inp" id="cfgCong" placeholder="Ex: Bom Jesus" style="max-width:280px;height:34px"></div>
-    <button class="btn btn-sv" onclick="salvarNomeCong()" style="margin-top:4px">Salvar</button>
-  </div>
-  <div class="ccard">
-    <div class="ctit">Firebase · Sincronização</div>
-    <p class="chint" style="margin-bottom:14px">Crie um projeto gratuito em <strong>console.firebase.google.com</strong> → Firestore → Config → App web. Cole as credenciais:</p>
-    <div class="crow"><label>API Key</label><input class="inp" id="cA" placeholder="AIzaSy…"></div>
-    <div class="crow"><label>Project ID</label><input class="inp" id="cP" placeholder="meu-projeto-123"></div>
-    <div class="crow"><label>App ID</label><input class="inp" id="cI" placeholder="1:123…:web:abc…"></div>
-    <button class="btn btn-sv" onclick="salvarCfg()" style="margin-top:4px">Conectar</button>
-    <div id="cSt"></div>
-  </div>
   <div class="ccard">
     <div class="ctit">Contatos WhatsApp</div>
     <p class="chint" style="margin-bottom:12px">Esses contatos aparecem como botão rápido ao indicar um território.</p>
@@ -1686,6 +1687,78 @@ function salvarNomeCong(){
   renderAll();
 }
 
+
+// ── LOGIN ──
+function setLoginErr(msg){
+  const el=document.getElementById('loginErr');
+  el.textContent=msg; el.classList.toggle('show',!!msg);
+}
+function setLoginLoading(on){
+  document.getElementById('loginBtn').disabled=on;
+  document.getElementById('loginBtnText').textContent=on?'Conectando…':'Entrar';
+  document.getElementById('loginSpinner').classList.toggle('show',on);
+}
+async function fazerLogin(){
+  const apiKey    = document.getElementById('lApiKey').value.trim();
+  const projectId = document.getElementById('lProjectId').value.trim();
+  const appId     = document.getElementById('lAppId').value.trim();
+
+  if(!apiKey)    { setLoginErr('Informe a API Key.'); return; }
+  if(!projectId) { setLoginErr('Informe o Project ID.'); return; }
+  if(!appId)     { setLoginErr('Informe o App ID.'); return; }
+
+  setLoginLoading(true); setLoginErr('');
+
+  try{
+    // Init Firebase and test connection
+    if(firebase.apps.length) await firebase.apps[0].delete();
+    const app=firebase.initializeApp({
+      apiKey, projectId, appId,
+      authDomain:`${projectId}.firebaseapp.com`,
+      storageBucket:`${projectId}.appspot.com`,
+      messagingSenderId:'',
+    });
+    db=firebase.firestore(app);
+    storage=firebase.storage(app);
+    docId=projectId;
+    // congName comes from project config or stays empty
+
+    // Test connection by fetching the doc
+    await db.collection('tj').doc(docId).get();
+
+    // Save credentials
+    const cfg={apiKey,projectId,appId,
+      authDomain:`${projectId}.firebaseapp.com`,
+      storageBucket:`${projectId}.appspot.com`,
+      messagingSenderId:''};
+    localStorage.setItem(KEY_CFG, JSON.stringify(cfg));
+
+    // Also update config panel fields
+    try{
+      document.getElementById('cA').value=apiKey;
+      document.getElementById('cP').value=projectId;
+      document.getElementById('cI').value=appId;
+    }catch(e){}
+
+    // Hide login, start sync
+    document.getElementById('loginScreen').style.display='none';
+    setSyncStatus('online');
+    sincFB();
+    renderAll();
+
+  }catch(err){
+    console.error('Login error:', err);
+    let msg='Não foi possível conectar. Verifique as credenciais.';
+    if(err.code==='auth/invalid-api-key'||err.message?.includes('API key')) msg='API Key inválida.';
+    else if(err.message?.includes('project')) msg='Project ID não encontrado.';
+    setLoginErr(msg);
+    setLoginLoading(false);
+    // Clean up failed firebase app
+    try{ if(firebase.apps.length) firebase.apps[0].delete(); db=null; storage=null; }catch(e){}
+    setSyncStatus('offline');
+  }
+}
+
 // ── TABS ──
 function switchTab(t){
   document.querySelectorAll('.ntab').forEach((el,i)=>el.classList.toggle('active',['indicar','registrar','historico','stats','importar','config'][i]===t));
@@ -1892,54 +1965,6 @@ function toast(m,err=false){
 }
 
 
-// ── SETUP SCREEN ──
-function mostrarSetup(){
-  document.getElementById('setupOverlay').style.display='flex';
-  document.getElementById('setupCong').focus();
-}
-function fecharSetup(){
-  document.getElementById('setupOverlay').style.display='none';
-}
-function setSetupErr(msg){
-  const el=document.getElementById('setupErr');
-  el.textContent=msg; el.classList.toggle('show',!!msg);
-}
-function concluirSetup(){
-  const cong   = document.getElementById('setupCong').value.trim();
-  const apiKey = document.getElementById('setupApiKey').value.trim();
-  const projId = document.getElementById('setupProjectId').value.trim();
-  const appId  = document.getElementById('setupAppId').value.trim();
-
-  if(!cong){ setSetupErr('Digite o nome da congregação.'); return; }
-  if(apiKey && !projId){ setSetupErr('Informe também o Project ID do Firebase.'); return; }
-
-  // Save congregation name
-  congName = cong;
-  localStorage.setItem('tj_cong', cong);
-
-  // Save & connect Firebase if provided
-  if(apiKey && projId){
-    const cfg={apiKey,projectId:projId,appId,
-      authDomain:`${projId}.firebaseapp.com`,
-      storageBucket:`${projId}.appspot.com`,
-      messagingSenderId:''};
-    localStorage.setItem(KEY_CFG, JSON.stringify(cfg));
-    // Update config fields too
-    try{
-      document.getElementById('cA').value=apiKey;
-      document.getElementById('cP').value=projId;
-      document.getElementById('cI').value=appId;
-    }catch(e){}
-    initFirebase(cfg);
-  }
-
-  fecharSetup();
-  renderAll();
-}
-function pularSetup(){
-  // Save whatever name was typed
-  const cong = document.getElementById('setupCong').value.trim();
-  if(cong){ congName=cong; localStorage.setItem('tj_cong',cong); }
   fecharSetup();
   renderAll();
 }
@@ -1947,68 +1972,62 @@ function pularSetup(){
 // ── INIT ──
 (function(){
   carregarTudo();
-  let hasConfig = false;
-  try{
-    const cfg=JSON.parse(localStorage.getItem(KEY_CFG)||'null');
-    if(cfg?.apiKey&&cfg?.projectId){
-      document.getElementById('cA').value=cfg.apiKey;
-      document.getElementById('cP').value=cfg.projectId;
-      document.getElementById('cI').value=cfg.appId||'';
-      initFirebase(cfg);
-      hasConfig=true;
-    }
-  }catch(e){}
 
-  // Pre-fill setup screen with saved cong name if any
-  if(congName){
-    try{ document.getElementById('setupCong').value=congName; }catch(e){}
+  const cfg=JSON.parse(localStorage.getItem(KEY_CFG)||'null');
+
+  if(cfg?.apiKey && cfg?.projectId && cfg?.appId){
+    // Already have credentials — pre-fill login and auto-login
+    document.getElementById('lApiKey').value    = cfg.apiKey;
+    document.getElementById('lProjectId').value = cfg.projectId;
+    document.getElementById('lAppId').value     = cfg.appId||'';
+    // Auto-login silently
+    fazerLogin();
+  } else {
+    // Show login screen — mandatory
+    renderIndicar(); // renders empty state while waiting
   }
-
-  // Show setup screen if never configured (no cong name AND no firebase)
-  if(!congName && !hasConfig){
-    mostrarSetup();
-  }
-
-  renderIndicar();
 })();
 
 </script>
 
-<!-- ══ SETUP SCREEN ══ -->
-<div class="setup-overlay" id="setupOverlay" style="display:none">
-  <div class="setup-card">
-    <div class="setup-icon">🗺️</div>
-    <div class="setup-title">Registro de<br><span>Territórios</span></div>
-    <p class="setup-sub">Configure sua congregação para começar.<br>Os dados ficam no seu próprio banco Firebase.</p>
-
-    <div class="setup-section">
-      <div class="setup-section-title">Congregação</div>
-      <div class="setup-field">
-        <label>Nome da congregação</label>
-        <input class="setup-inp" id="setupCong" placeholder="Ex: Bom Jesus" autocomplete="off">
+<!-- ══ LOGIN ══ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🗺️</div>
+      <div>
+        <div class="login-logo-text">Territórios</div>
+        <div class="login-logo-sub">S-13 · REGISTRO</div>
       </div>
     </div>
+    <div class="login-title">Entrar na sua<br>congregação</div>
+    <p class="login-sub">Cole as credenciais do Firebase da sua congregação.<br>Cada congregação tem seu próprio banco de dados.</p>
 
-    <div class="setup-section">
-      <div class="setup-section-title">Firebase (sincronização online)</div>
-      <div class="setup-field">
-        <label>API Key</label>
-        <input class="setup-inp" id="setupApiKey" placeholder="AIzaSy…" autocomplete="off">
-      </div>
-      <div class="setup-field">
-        <label>Project ID</label>
-        <input class="setup-inp" id="setupProjectId" placeholder="meu-projeto-123" autocomplete="off">
-      </div>
-      <div class="setup-field">
-        <label>App ID <span style="color:var(--txt3);font-weight:400">(opcional)</span></label>
-        <input class="setup-inp" id="setupAppId" placeholder="1:123…:web:abc…" autocomplete="off">
-      </div>
-      <p class="setup-optional">Crie grátis em <strong style="color:var(--txt2)">console.firebase.google.com</strong> → Firestore → App web</p>
+    <div class="login-field">
+      <label>API Key</label>
+      <input class="login-inp" id="lApiKey" placeholder="AIzaSy…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="login-field">
+      <label>Project ID</label>
+      <input class="login-inp" id="lProjectId" placeholder="meu-projeto-123" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="login-field">
+      <label>App ID</label>
+      <input class="login-inp" id="lAppId" placeholder="1:123…:web:abc…" autocomplete="off" spellcheck="false">
     </div>
 
-    <div class="setup-err" id="setupErr"></div>
-    <button class="setup-btn" onclick="concluirSetup()">Entrar →</button>
-    <span class="setup-skip" onclick="pularSetup()">Pular por enquanto (modo offline)</span>
+    <div class="login-err" id="loginErr"></div>
+
+    <button class="login-btn" id="loginBtn" onclick="fazerLogin()">
+      <span id="loginBtnText">Entrar</span>
+      <div class="login-spinner" id="loginSpinner"></div>
+    </button>
+
+    <p class="login-hint">
+      Sem credenciais ainda? Crie grátis em<br>
+      <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a>
+      → Firestore → App web
+    </p>
   </div>
 </div>
 
