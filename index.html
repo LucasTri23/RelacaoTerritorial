@@ -1971,22 +1971,25 @@ function toast(m,err=false){
   const cfg=JSON.parse(localStorage.getItem(KEY_CFG)||'null');
 
   if(cfg?.apiKey && cfg?.projectId && cfg?.appId){
-    // Already have credentials — pre-fill login and auto-login
+    // Ja tem credenciais: esconde o login na hora, renderiza dados locais
+    // e reconecta o Firebase em background
+    document.getElementById('loginScreen').style.display='none';
     document.getElementById('lApiKey').value    = cfg.apiKey;
     document.getElementById('lProjectId').value = cfg.projectId;
     document.getElementById('lAppId').value     = cfg.appId||'';
-    // Auto-login silently
-    fazerLogin();
-  } else {
-    // Show login screen — mandatory
-    renderIndicar(); // renders empty state while waiting
+    renderAll();   // mostra dados locais imediatamente
+    fazerLogin();  // sincroniza com Firebase em background
+  }
+  // Se nao tem credenciais, mostra a tela de login
+  else {
+    document.getElementById('loginScreen').style.display='flex';
   }
 })();
 
 </script>
 
 <!-- ══ LOGIN ══ -->
-<div class="login-screen" id="loginScreen">
+<div class="login-screen" id="loginScreen" style="display:none">
   <div class="login-card">
     <div class="login-logo">
       <div class="login-logo-icon">🗺️</div>
