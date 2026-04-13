@@ -844,6 +844,7 @@ let dados    = [];   // populated after import
 let cards    = {};   // local overrides {n: dataURL}
 let db       = null;
 let storage  = null; // Firebase Storage
+let docId    = 'dados';   // set to cfg.projectId on connect
 let activeTab= 'indicar';
 let bFiltro  = '';
 
@@ -867,6 +868,7 @@ function initFirebase(cfg){
     const app=firebase.initializeApp(cfg);
     db=firebase.firestore(app);
     storage=firebase.storage(app);
+    docId=cfg.projectId; // each project = isolated document
     sincFB(); setSyncStatus('online');
     const ss=document.getElementById('storageStatus'); if(ss) ss.style.display='block';
   }catch(e){ setSyncStatus('offline'); console.error(e); }
@@ -874,11 +876,11 @@ function initFirebase(cfg){
 async function sincFB(){
   if(!db)return; setSyncStatus('syncing');
   try{
-    const doc=await db.collection('tj').doc('bj2026').get();
+    const doc=await db.collection('tj').doc(docId).get();
     if(doc.exists){ const r=doc.data(); if(r.dados&&r.dados.length){dados=r.dados;salvarDados();} renderAll(); }
     else{ await pushFB(); }
     setSyncStatus('online');
-    db.collection('tj').doc('bj2026').onSnapshot(snap=>{
+    db.collection('tj').doc(docId).onSnapshot(snap=>{
       if(!snap.exists)return;
       const r=snap.data();
       if(r.dados) dados=r.dados;
@@ -888,7 +890,7 @@ async function sincFB(){
 }
 async function pushFB(){
   if(!db)return; setSyncStatus('syncing');
-  try{ await db.collection('tj').doc('bj2026').set({dados,updatedAt:new Date().toISOString()}); setSyncStatus('online'); }
+  try{ await db.collection('tj').doc(docId).set({dados,updatedAt:new Date().toISOString()}); setSyncStatus('online'); }
   catch(e){ setSyncStatus('offline'); }
 }
 
