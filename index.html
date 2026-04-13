@@ -865,7 +865,7 @@ let dados    = [];   // populated after import
 let cards    = {};   // local overrides {n: dataURL}
 let db       = null;
 let storage  = null; // Firebase Storage
-let docId    = 'dados';   // set to cfg.projectId on connect
+const docId  = 'dados';   // fixed — isolation comes from Firebase project
 let anoAtual = null;       // extracted from imported xlsx (e.g. 2026)
 let congName = '';             // congregation name set in config
 let activeTab= 'indicar';
@@ -893,7 +893,7 @@ function initFirebase(cfg){
     const app=firebase.initializeApp(cfg);
     db=firebase.firestore(app);
     storage=firebase.storage(app);
-    docId=cfg.projectId; // each project = isolated document
+    // docId is always 'dados' — project isolation via Firebase project
     sincFB(); setSyncStatus('online');
     const ss=document.getElementById('storageStatus'); if(ss) ss.style.display='block';
   }catch(e){ setSyncStatus('offline'); console.error(e); }
@@ -901,17 +901,35 @@ function initFirebase(cfg){
 async function sincFB(){
   if(!db)return; setSyncStatus('syncing');
   try{
-    const doc=await db.collection('tj').doc(docId).get();
-    if(doc.exists){ const r=doc.data(); if(r.dados&&r.dados.length){dados=r.dados;salvarDados();} renderAll(); }
-    else{ await pushFB(); }
-    setSyncStatus('online');
-    db.collection('tj').doc(docId).onSnapshot(snap=>{
-      if(!snap.exists)return;
+    let docRef = db.collection('tj').doc(docId);
+    let snap = await docRef.get();
+
+    // Migration: if 'dados' doc doesn't exist but old 'bj2026' does, migrate it
+    if(!snap.exists){
+      const oldSnap = await db.collection('tj').doc('bj2026').get();
+      if(oldSnap.exists){
+        const oldData = oldSnap.data();
+        await docRef.set({dados: oldData.dados||[], updatedAt: new Date().toISOString()});
+        snap = await docRef.get();
+        toast('Dados migrados para o novo formato ✓');
+      }
+    }
+
+    if(snap.exists){
       const r=snap.data();
+      if(r.dados&&r.dados.length){dados=r.dados;salvarDados();}
+      renderAll();
+    } else {
+      await pushFB();
+    }
+    setSyncStatus('online');
+    docRef.onSnapshot(s=>{
+      if(!s.exists)return;
+      const r=s.data();
       if(r.dados) dados=r.dados;
       salvarDados(); renderAll();
     });
-  }catch(e){ setSyncStatus('offline'); }
+  }catch(e){ setSyncStatus('offline'); console.error(e); }
 }
 async function pushFB(){
   if(!db)return; setSyncStatus('syncing');
@@ -1659,7 +1677,7 @@ async function conectarFirebase(){
     });
     db      = firebase.firestore(app);
     storage = firebase.storage(app);
-    docId   = projectId;
+    // docId fixed as 'dados'
 
     // Isola localStorage por projeto
     KEY_DADOS = 'tj_dados_v1_'+projectId;
@@ -1695,7 +1713,7 @@ async function conectarFirebase(){
 function desconectarFirebase(){
   if(!confirm('Desconectar do banco atual? Os dados locais são mantidos.'))return;
   try{ if(firebase.apps.length) firebase.apps[0].delete(); }catch(e){}
-  db=null; storage=null; docId='dados';
+  db=null; storage=null;
   localStorage.removeItem(KEY_CFG);
   setSyncStatus('offline');
   atualizarStatusCard();
