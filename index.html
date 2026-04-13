@@ -811,6 +811,7 @@ datalist{display:none}
   <div class="ccard" id="fbConnCard">
     <div class="ctit">Conectar ao Firebase</div>
     <p class="chint" style="margin-bottom:14px">Cole as credenciais do projeto da sua congregação.<br>Crie grátis em <strong>console.firebase.google.com</strong> → Firestore → App web.</p>
+    <div class="crow"><label>Nome cong.</label><input class="inp" id="cfgCong" placeholder="Ex: Bom Jesus" style="max-width:280px;height:34px" oninput="congName=this.value;localStorage.setItem('tj_cong',this.value);renderAll()"></div>
     <div class="crow"><label>API Key</label><input class="inp" id="cA" placeholder="AIzaSy…" spellcheck="false"></div>
     <div class="crow"><label>Project ID</label><input class="inp" id="cP" placeholder="meu-projeto-123" spellcheck="false"></div>
     <div class="crow"><label>App ID</label><input class="inp" id="cI" placeholder="1:123…:web:abc…" spellcheck="false"></div>
@@ -1182,8 +1183,21 @@ function cardZone(n){
 // ── INDICAR ──
 function renderIndicar(){
   const el=document.getElementById('indicarContent');
+  const sb=document.getElementById('statsBar');
+
+  // Sem Firebase conectado — mostra empty state pedindo configuração
+  if(!db){
+    if(sb) sb.innerHTML='';
+    el.innerHTML=`<div class="empty-state">
+      <div class="es-icon">🔌</div>
+      <div class="es-title">Não conectado</div>
+      <div class="es-sub">Vá em <strong>Config</strong> e conecte ao Firebase da sua congregação.</div>
+    </div>`;
+    return;
+  }
+
   if(!dados.length){
-    document.getElementById('statsBar').innerHTML='';
+    if(sb) sb.innerHTML='';
     el.innerHTML=`<div class="empty-state">
       <div class="es-icon">📋</div>
       <div class="es-title">Nenhum dado carregado</div>
@@ -1736,7 +1750,7 @@ function switchTab(t){
   activeTab=t;
   if(t==='registrar') renderRegistrar();
   else if(t==='historico') renderHist();
-  else if(t==='config'){ renderContatos(); const ci=document.getElementById('cfgCong'); if(ci&&congName) ci.value=congName; }
+  else if(t==='config'){ renderContatos(); atualizarStatusCard(); const ci=document.getElementById('cfgCong'); if(ci) ci.value=congName||''; }
   else if(t==='stats') renderStats();
 }
 
@@ -1952,6 +1966,9 @@ document.addEventListener('DOMContentLoaded', function(){
       document.getElementById('cI').value=cfg.appId||'';
     }catch(e){}
   }
+
+  // Preenche campo nome se salvo
+  try{ const ci=document.getElementById('cfgCong'); if(ci&&congName) ci.value=congName; }catch(e){}
 
   // Auto-connect Firebase if credentials saved
   if(cfg?.apiKey && cfg?.projectId && cfg?.appId){
