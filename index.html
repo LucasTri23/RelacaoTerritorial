@@ -687,6 +687,50 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);font-size:14p
 
 
 
+
+/* ── MENSAGENS WAP ── */
+.msg-card{
+  background:var(--surface2);border:1px solid var(--brd);
+  border-radius:var(--r-md);padding:12px 14px;margin-bottom:8px;
+}
+.msg-label{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.msg-label input{
+  font-family:var(--mono);font-size:11px;height:28px;padding:0 8px;
+  border:1px solid var(--brd);border-radius:6px;
+  background:var(--surface3);color:var(--txt);outline:none;flex:1;
+}
+.msg-label input:focus{border-color:var(--accent)}
+.msg-textarea{
+  width:100%;font-family:var(--mono);font-size:11px;line-height:1.6;
+  min-height:80px;padding:8px 10px;resize:vertical;
+  border:1px solid var(--brd);border-radius:6px;
+  background:var(--surface3);color:var(--txt);outline:none;
+}
+.msg-textarea:focus{border-color:var(--accent)}
+.msg-vars{font-family:var(--mono);font-size:9px;color:var(--txt3);margin-top:4px}
+.msg-vars span{
+  background:var(--surface);border:1px solid var(--brd2);
+  border-radius:4px;padding:1px 6px;margin-right:4px;color:var(--accent2);
+}
+.wap-btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.btn-wap-msg{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  padding:6px 12px;border-radius:var(--r-sm);cursor:pointer;
+  background:rgba(37,211,102,.12);color:var(--wap);
+  border:1px solid rgba(37,211,102,.25);text-decoration:none;
+  transition:all .18s;white-space:nowrap;
+}
+.btn-wap-msg:hover{background:rgba(37,211,102,.22)}
+.btn-wap-msg svg{width:13px;height:13px;fill:var(--wap);flex-shrink:0}
+.contato-item{
+  background:var(--surface2);border:1px solid var(--brd);
+  border-radius:var(--r-md);padding:12px 14px;margin-bottom:8px;
+  display:flex;align-items:center;gap:10px;
+}
+.contato-nome{font-family:var(--display);font-size:13px;font-weight:600;flex:1}
+.contato-num{font-family:var(--mono);font-size:10px;color:var(--txt3)}
+
 datalist{display:none}
 </style>
 </head>
@@ -828,15 +872,32 @@ datalist{display:none}
 
   <!-- CONTATOS WHATSAPP -->
   <div class="ccard">
-    <div class="ctit">Contatos WhatsApp</div>
-    <p class="chint" style="margin-bottom:12px">Aparecem como botão rápido ao indicar um território.</p>
+    <div class="ctit">Dirigentes · WhatsApp</div>
+    <p class="chint" style="margin-bottom:12px">Cadastre os dirigentes. Os botões aparecem em cada território.</p>
     <div id="contatosList"></div>
-    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-      <input class="inp" id="ctNm" placeholder="Nome" style="flex:1;min-width:100px;height:34px">
-      <input class="inp" id="ctNum" placeholder="5531999998888" style="width:160px;height:34px;font-family:var(--mono);font-size:11px">
-      <button class="btn btn-sv" onclick="addContato()">Adicionar</button>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:flex-end">
+      <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:100px">
+        <label style="font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em">Nome</label>
+        <input class="inp" id="ctNm" placeholder="Ex: João" style="height:34px">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em">Número</label>
+        <input class="inp" id="ctNum" placeholder="5531999998888" style="width:160px;height:34px;font-family:var(--mono);font-size:11px">
+      </div>
+      <button class="btn btn-sv" onclick="addContato()" style="height:34px">Adicionar</button>
     </div>
-    <p class="chint" style="margin-top:8px">Formato: código país + DDD + número (ex: 5531999998888)</p>
+    <p class="chint" style="margin-top:6px">Código país + DDD + número (ex: 5531999998888)</p>
+  </div>
+
+  <!-- MENSAGENS WHATSAPP -->
+  <div class="ccard">
+    <div class="ctit">Mensagens · WhatsApp</div>
+    <p class="chint" style="margin-bottom:14px">
+      Personalize as mensagens. Use as variáveis abaixo para inserir dados automaticamente.<br>
+      <span style="color:var(--accent2)">{dirigente}</span> · <span style="color:var(--accent2)">{territorio}</span> · <span style="color:var(--accent2)">{bairro}</span> · <span style="color:var(--accent2)">{data}</span>
+    </p>
+    <div id="msgsList"></div>
+    <button class="btn btn-add" onclick="addMensagem()" style="margin-top:4px">+ Nova mensagem</button>
   </div>
 
   <!-- DADOS -->
@@ -1103,31 +1164,26 @@ function bairroChips(){
 const wapSVG=`<svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.522 5.825L.057 23.885a.5.5 0 00.615.617l6.158-1.479A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.925 0-3.73-.509-5.29-1.4l-.379-.222-3.927.943.977-3.845-.247-.396A9.96 9.96 0 012 12c0-5.514 4.487-10 10-10s10 4.486 10 10-4.486 10-10 10z"/></svg>`;
 
 function wapButtons(n, desc){
-  const contatos=getContatos();
-  const ult=dados.find(x=>x.n===n)?.designacoes.slice(-1)[0];
-  const msg=encodeURIComponent(`📍 *Território ${n} — ${desc}*
-${ult?.desig?`Designação: ${fmtD(ult.desig)}
-`:''}
-Segue o cartão do território. Quando concluir, me avisa a data. Obrigado! 🙏`);
-  let html=`<div class="wap-row">`;
+  const contatos = getContatos();
+  const msgs     = getMensagens();
+  const terr     = dados.find(x=>x.n===n);
+  if(!contatos.length){
+    return`<div class="wap-btn-row"><span class="wap-hint">Cadastre dirigentes em Config para enviar mensagens.</span></div>`;
+  }
+  // Para cada contato, um dropdown/botão por mensagem
+  let html = '';
   contatos.forEach(c=>{
-    html+=`<a class="btn-wap" href="https://wa.me/${c.num}?text=${msg}" target="_blank" rel="noopener">${wapSVG}${c.nome}</a>`;
+    html += `<div style="margin-bottom:10px">
+      <div style="font-family:var(--display);font-size:12px;font-weight:600;margin-bottom:5px;color:var(--txt2)">${wapSVG} ${c.nome}</div>
+      <div class="wap-btn-row">`;
+    msgs.forEach((msg,i)=>{
+      const texto = processarMsg(msg.texto, terr, c);
+      const url = `https://wa.me/${c.num}?text=${encodeURIComponent(texto)}`;
+      html += `<a class="btn-wap-msg" href="${url}" target="_blank" rel="noopener">${wapSVG}${msg.label}</a>`;
+    });
+    html += `</div></div>`;
   });
-  html+=`<input class="wap-inp" id="wn-${n}" placeholder="5531…" maxlength="15">
-    <a class="btn-wap btn-wap-alt" href="#" onclick="wapManual('${n}','${desc}');return false">${wapSVG}Outro</a>`;
-  if(!contatos.length) html+=`<span class="wap-hint">← Cadastre contatos em Config</span>`;
-  html+=`</div>`;
   return html;
-}
-function wapManual(n, desc){
-  const num=(document.getElementById('wn-'+n)||{}).value?.replace(/\D/g,'')||'';
-  if(!num){toast('Digite o número',true);return;}
-  const ult=dados.find(x=>x.n===n)?.designacoes.slice(-1)[0];
-  const msg=encodeURIComponent(`📍 *Território ${n} — ${desc}*
-${ult?.desig?`Designação: ${fmtD(ult.desig)}
-`:''}
-Segue o cartão do território. Quando concluir, me avisa a data. Obrigado! 🙏`);
-  window.open(`https://wa.me/${num}?text=${msg}`,'_blank');
 }
 
 // ── CARD IMAGE ZONE ──
@@ -1626,6 +1682,7 @@ function addCardPreview(label, ok){
 }
 
 // ── CONTATOS ──
+// ── CONTATOS ──
 function getContatos(){ try{return JSON.parse(localStorage.getItem(KEY_CONTATOS)||'[]');}catch(e){return[];} }
 function saveContatos(c){ localStorage.setItem(KEY_CONTATOS,JSON.stringify(c)); }
 function addContato(){
@@ -1637,14 +1694,67 @@ function addContato(){
 }
 function renderContatos(){
   const c=getContatos(), el=document.getElementById('contatosList');
-  if(!c.length){el.innerHTML='<p class="chint" style="margin-bottom:8px">Nenhum contato ainda.</p>';return;}
-  el.innerHTML=c.map((x,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--brd)">
-    <span style="flex:1;font-size:12px">${x.nome}</span>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--mut)">${x.num}</span>
+  if(!c.length){el.innerHTML='<p class="chint" style="margin-bottom:8px">Nenhum dirigente cadastrado ainda.</p>';return;}
+  el.innerHTML=c.map((x,i)=>`<div class="contato-item">
+    <div class="contato-nome">${x.nome}</div>
+    <div class="contato-num">${x.num}</div>
     <button class="btn-del" onclick="delContato(${i})">×</button>
   </div>`).join('');
+  renderMensagens();
 }
 function delContato(i){ const c=getContatos(); c.splice(i,1); saveContatos(c); renderContatos(); renderAll(); }
+
+// ── MENSAGENS ──
+const KEY_MSGS = 'tj_msgs_v1';
+const MSGS_PADRAO = [
+  {
+    label: '📍 Indicação de território',
+    texto: 'Olá, {dirigente}! Este é o seu território para a próxima saída de campo. Qualquer dúvida, leia o QR Code ou me contate. 🙏'
+  },
+  {
+    label: '✅ Perguntar conclusão',
+    texto: 'Olá, tudo bem {dirigente}? Gostaria de saber se você terminou o cartão {territorio} ({bairro}). 😊'
+  }
+];
+function getMensagens(){ try{ const s=localStorage.getItem(KEY_MSGS); return s?JSON.parse(s):JSON.parse(JSON.stringify(MSGS_PADRAO)); }catch(e){ return JSON.parse(JSON.stringify(MSGS_PADRAO)); } }
+function saveMensagens(m){ localStorage.setItem(KEY_MSGS,JSON.stringify(m)); }
+function addMensagem(){
+  const m=getMensagens(); m.push({label:'Nova mensagem',texto:'Olá, {dirigente}!'});
+  saveMensagens(m); renderMensagens(); toast('Mensagem adicionada!');
+}
+function delMensagem(i){ const m=getMensagens(); m.splice(i,1); saveMensagens(m); renderMensagens(); toast('Mensagem removida.'); }
+function salvarMensagem(i){
+  const m=getMensagens();
+  const label=document.getElementById('msg-label-'+i)?.value||m[i].label;
+  const texto=document.getElementById('msg-texto-'+i)?.value||m[i].texto;
+  m[i]={label,texto}; saveMensagens(m); toast('Mensagem salva!');
+}
+function renderMensagens(){
+  const el=document.getElementById('msgsList'); if(!el)return;
+  const m=getMensagens();
+  el.innerHTML=m.map((msg,i)=>`
+    <div class="msg-card">
+      <div class="msg-label">
+        <input id="msg-label-${i}" value="${esc(msg.label)}" placeholder="Nome da mensagem">
+        <button class="btn-del" onclick="delMensagem(${i})">×</button>
+      </div>
+      <textarea class="msg-textarea" id="msg-texto-${i}" placeholder="Texto da mensagem...">${esc(msg.texto)}</textarea>
+      <div class="msg-vars">Variáveis: <span>{dirigente}</span><span>{territorio}</span><span>{bairro}</span><span>{data}</span></div>
+      <button class="btn btn-sv" onclick="salvarMensagem(${i})" style="margin-top:8px;font-size:10px">Salvar</button>
+    </div>
+  `).join('');
+}
+
+// ── PROCESSAR MENSAGEM ──
+function processarMsg(template, terr, contato){
+  const ult = terr?.designacoes?.slice(-1)[0];
+  const data = ult?.desig ? fmtD(ult.desig) : '';
+  return template
+    .replace(/\{dirigente\}/gi, contato?.nome || '')
+    .replace(/\{territorio\}/gi, terr?.n || '')
+    .replace(/\{bairro\}/gi, terr?.desc || '')
+    .replace(/\{data\}/gi, data);
+}
 
 // ── CONFIG ──
 // ── CONFIG / FIREBASE ──
@@ -1763,7 +1873,7 @@ function switchTab(t){
   activeTab=t;
   if(t==='registrar') renderRegistrar();
   else if(t==='historico') renderHist();
-  else if(t==='config'){ renderContatos(); atualizarStatusCard(); const ci=document.getElementById('cfgCong'); if(ci) ci.value=congName||''; }
+  else if(t==='config'){ renderContatos(); renderMensagens(); atualizarStatusCard(); const ci=document.getElementById('cfgCong'); if(ci) ci.value=congName||''; }
   else if(t==='stats') renderStats();
 }
 
