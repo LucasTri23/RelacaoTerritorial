@@ -778,7 +778,11 @@ datalist{display:none}
   </div>
   <div class="ccard">
     <div class="ctit">2 · Cartões de mapa</div>
-    <p class="chint" style="margin-bottom:12px">Arraste as imagens — o app detecta o número pelo nome do arquivo e salva no Firebase Storage do seu projeto. Cada congregação tem seus próprios cartões.</p>
+    <p class="chint" style="margin-bottom:12px">Arraste as imagens — o app detecta o número pelo nome do arquivo e salva no <strong>Firebase Storage</strong> do seu projeto.</p>
+    <div id="storageStatus" style="font-family:var(--mono);font-size:10px;padding:8px 12px;border-radius:8px;margin-bottom:10px;background:var(--orange-bg);color:var(--orange);border:1px solid rgba(232,145,74,.2)">
+      ⚠ Para salvar cartões, ative o Storage em:<br>
+      <strong>console.firebase.google.com → Storage → Começar → Modo de teste</strong>
+    </div>
     <div id="storageStatus" style="display:none;font-family:var(--mono);font-size:10px;padding:7px 12px;border-radius:8px;margin-bottom:10px;background:var(--blue-bg);color:var(--blue);border:1px solid rgba(91,168,245,.2)">
       ✓ Firebase Storage conectado — cartões serão salvos na nuvem
     </div>
@@ -896,7 +900,7 @@ function initFirebase(cfg){
     storage=firebase.storage(app);
     // docId is always 'dados' — project isolation via Firebase project
     sincFB(); setSyncStatus('online');
-    const ss=document.getElementById('storageStatus'); if(ss) ss.style.display='block';
+    const ss=document.getElementById('storageStatus'); if(ss){ ss.style.display='none'; }
   }catch(e){ setSyncStatus('offline'); console.error(e); }
 }
 async function sincFB(){
@@ -1128,51 +1132,91 @@ Segue o cartão do território. Quando concluir, me avisa a data. Obrigado! 🙏
 
 // ── CARD IMAGE ZONE ──
 // Cache de URLs do Storage {n: url}
-const storageCache = {};
+// ── CARTÕES: comprime e salva no Firestore (sem Storage, sem CORS) ──
+// Cache local em memória {n: dataURL}
+const cardsCache = {};
 
-async function getStorageURL(n){
-  if(storageCache[n]) return storageCache[n];
-  if(!storage) return null;
+// Comprime imagem para JPEG q=0.5, max 600px — fica ~30-60KB
+function comprimirImagem(file, callback){
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 600;
+      let w = img.width, h = img.height;
+      if(w > MAX){ h = Math.round(h*MAX/w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      callback(canvas.toDataURL('image/jpeg', 0.5));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function salvarCartaoFirestore(n, dataURL){
+  if(!db) return false;
   try{
-    // Try webp first, then png, then jpg
-    for(const ext of ['webp','png','jpg']){
-      try{
-        const url = await storage.ref(`cartoes/${n}.${ext}`).getDownloadURL();
-        storageCache[n] = url;
-        return url;
-      }catch(e){ continue; }
+    await db.collection('tj_cards').doc(String(n)).set({
+      img: dataURL,
+      updatedAt: new Date().toISOString()
+    });
+    cardsCache[n] = dataURL;
+    // Atualiza localStorage também
+    cards[n] = dataURL; salvarCards();
+    return true;
+  }catch(e){
+    console.error('Erro ao salvar cartão:', e);
+    return false;
+  }
+}
+
+async function buscarCartaoFirestore(n){
+  if(cardsCache[n]) return cardsCache[n];
+  if(cards[n]){ cardsCache[n]=cards[n]; return cards[n]; } // cache local
+  if(!db) return null;
+  try{
+    const snap = await db.collection('tj_cards').doc(String(n)).get();
+    if(snap.exists){
+      const img = snap.data().img;
+      cardsCache[n] = img;
+      cards[n] = img; salvarCards();
+      return img;
     }
-    return null;
-  }catch(e){ return null; }
+  }catch(e){}
+  return null;
 }
 
 function cardZone(n){
-  // 1. Local override (user uploaded via browser)
-  const localImg = cards[n];
-  if(localImg){
+  const pid = 'card-ph-'+String(n).replace(/[^a-z0-9]/gi,'_');
+
+  // Já tem no cache → mostra imediatamente
+  const cached = cardsCache[n] || cards[n];
+  if(cached){
     return`<div class="card-zone">
-      <div class="card-img-wrap"><img src="${localImg}" style="width:100%;display:block;border-radius:7px" loading="lazy"></div>
-      <label class="card-upload-btn" style="font-size:10px">
+      <div class="card-img-wrap"><img src="${cached}" style="width:100%;display:block;border-radius:7px" loading="lazy"></div>
+      <label class="card-upload-btn" style="font-size:10px;margin-top:6px">
         🔄 Substituir cartão
         <input type="file" accept="image/*" onchange="uploadCardSingle('${n}',this.files[0])">
       </label>
     </div>`;
   }
-  // 2. Firebase Storage (async - render placeholder then load)
-  const placeholderId = 'card-ph-'+n.replace(/[^a-z0-9]/gi,'_');
-  // Trigger async load
-  if(storage){
-    setTimeout(()=>{
-      getStorageURL(n).then(url=>{
-        const el = document.getElementById(placeholderId);
-        if(!el) return;
-        if(url){
-          el.innerHTML = `<div class="card-img-wrap"><img src="${url}" style="width:100%;display:block;border-radius:7px" loading="lazy"></div>`;
-        }
-      });
-    }, 50);
-  }
-  return`<div class="card-zone" id="${placeholderId}">
+
+  // Busca no Firestore de forma assíncrona
+  setTimeout(()=>{
+    buscarCartaoFirestore(n).then(img=>{
+      const el = document.getElementById(pid);
+      if(!el || !img) return;
+      el.innerHTML=`<div class="card-img-wrap"><img src="${img}" style="width:100%;display:block;border-radius:7px" loading="lazy"></div>
+        <label class="card-upload-btn" style="font-size:10px;margin-top:6px">
+          🔄 Substituir cartão
+          <input type="file" accept="image/*" onchange="uploadCardSingle('${n}',this.files[0])">
+        </label>`;
+    });
+  }, 80);
+
+  return`<div class="card-zone" id="${pid}">
     <label class="card-upload-btn">
       📎 Adicionar cartão do território ${n}
       <input type="file" accept="image/*" onchange="uploadCardSingle('${n}',this.files[0])">
@@ -1526,36 +1570,20 @@ function handleCardsFiles(files){
 }
 function uploadCardSingle(n, file){
   if(!file) return;
-  // Show local preview immediately
-  const reader = new FileReader();
-  reader.onload = async e => {
-    cards[n] = e.target.result;
-    salvarCards();
-    renderAll();
-    toast(`Cartão ${n} salvo localmente`);
-    // Upload to Firebase Storage
-    if(storage){
-      try{
-        setSyncStatus('syncing');
-        const ext = file.name.split('.').pop().toLowerCase() || 'png';
-        const ref = storage.ref(`cartoes/${n}.${ext}`);
-        await ref.put(file);
-        // Get URL and cache it
-        const url = await ref.getDownloadURL();
-        storageCache[n] = url;
-        // Can now remove from local cards to save localStorage space
-        delete cards[n]; salvarCards();
-        setSyncStatus('online');
-        toast(`Cartão ${n} salvo! ✓`);
-        renderAll();
-      }catch(err){
-        console.error('Storage upload error:', err);
-        setSyncStatus('offline');
-        toast(`Cartão ${n} salvo só localmente (Storage offline)`, true);
-      }
+  if(!db){ toast('Conecte ao Firebase primeiro (aba Config)', true); return; }
+  toast(`Comprimindo cartão ${n}…`);
+  comprimirImagem(file, async dataURL=>{
+    setSyncStatus('syncing');
+    const ok = await salvarCartaoFirestore(n, dataURL);
+    if(ok){
+      setSyncStatus('online');
+      toast(`Cartão ${n} salvo ✓`);
+      renderAll();
+    } else {
+      setSyncStatus('offline');
+      toast(`Erro ao salvar cartão ${n}`, true);
     }
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 async function processCardImage(file){
@@ -1565,27 +1593,12 @@ async function processCardImage(file){
     if(!num){ addCardPreview(file.name, false); return; }
     num = num.trim();
   }
-  if(storage){
-    try{
-      const ext = file.name.split('.').pop().toLowerCase()||'png';
-      const ref = storage.ref(`cartoes/${num}.${ext}`);
-      await ref.put(file);
-      const url = await ref.getDownloadURL();
-      storageCache[num] = url;
-      if(cards[num]){ delete cards[num]; salvarCards(); }
-      addCardPreview(num, true);
-      renderAll();
-    }catch(err){
-      console.error('Storage upload:', err);
-      const reader = new FileReader();
-      reader.onload = e => { cards[num]=e.target.result; salvarCards(); addCardPreview(num,true); renderAll(); };
-      reader.readAsDataURL(file);
-    }
-  } else {
-    const reader = new FileReader();
-    reader.onload = e => { cards[num]=e.target.result; salvarCards(); addCardPreview(num,true); renderAll(); };
-    reader.readAsDataURL(file);
-  }
+  if(!db){ addCardPreview(`${num} (sem Firebase)`, false); return; }
+  comprimirImagem(file, async dataURL=>{
+    const ok = await salvarCartaoFirestore(num, dataURL);
+    addCardPreview(num, ok);
+    if(ok) renderAll();
+  });
 }
 
 function extractNumFromFilename(name){
@@ -1740,7 +1753,7 @@ function salvarCfg(){ conectarFirebase(); }
 function setCfgSt_old(m,ok){ setCfgSt(m,ok); }
 
 function limparTudo(){ if(!confirm('Apagar todos os dados e cartões?'))return; dados=[]; cards={}; salvarDados(); salvarCards(); renderAll(); toast('Dados apagados.'); }
-function limparCartoes(){ if(!confirm('Apagar cache local dos cartões?'))return; cards={}; Object.keys(storageCache).forEach(k=>delete storageCache[k]); salvarCards(); renderAll(); toast('Cache de cartões limpo.'); }
+function limparCartoes(){ if(!confirm('Apagar todos os cartões?'))return; cards={}; Object.keys(cardsCache).forEach(k=>delete cardsCache[k]); salvarCards(); renderAll(); toast('Cartões limpos.'); }
 
 // ── TABS ──
 function switchTab(t){
