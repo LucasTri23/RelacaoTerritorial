@@ -1972,7 +1972,7 @@ function toast(m,err=false){
 }
 
 // ── INIT ──
-(function(){
+document.addEventListener('DOMContentLoaded', function(){
   const cfg=JSON.parse(localStorage.getItem(KEY_CFG)||'null');
   // Define chaves por projeto ANTES de carregar dados locais
   if(cfg?.projectId){
@@ -1982,21 +1982,18 @@ function toast(m,err=false){
   carregarTudo(); // agora usa as chaves corretas
 
   if(cfg?.apiKey && cfg?.projectId && cfg?.appId){
-    // Ja tem credenciais: atualiza chaves para o projeto correto ANTES de carregar
-    // Chaves já definidas no init, só reconecta
-    // Esconde login e reconecta em background
+    // Ja tem credenciais — esconde login imediatamente e reconecta
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('lApiKey').value    = cfg.apiKey;
     document.getElementById('lProjectId').value = cfg.projectId;
     document.getElementById('lAppId').value     = cfg.appId||'';
     renderAll();
     fazerLogin();
-  }
-  // Se nao tem credenciais, mostra a tela de login
-  else {
+  } else {
+    // Sem credenciais — mostra tela de login
     document.getElementById('loginScreen').style.display='flex';
   }
-})();
+});
 
 </script>
 
