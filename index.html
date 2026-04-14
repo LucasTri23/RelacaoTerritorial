@@ -840,6 +840,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);font-size:14p
 }
 .msg-modal-close:hover{background:var(--surface2);color:var(--txt)}
 
+
+.btn-ordem{
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  padding:5px 10px;border:1px solid var(--brd);border-radius:20px;
+  cursor:pointer;background:transparent;color:var(--txt3);
+  white-space:nowrap;user-select:none;transition:all .18s;
+  display:inline-flex;align-items:center;gap:4px;flex-shrink:0;
+}
+.btn-ordem:hover{border-color:var(--brd2);color:var(--txt2)}
+.btn-ordem.on{background:var(--accent-bg);border-color:var(--accent-brd);color:var(--accent2)}
+
 datalist{display:none}
 </style>
 </head>
@@ -1013,6 +1024,24 @@ datalist{display:none}
     <button class="btn btn-add" onclick="addMensagem()" style="margin-top:4px">+ Nova mensagem</button>
   </div>
 
+  <!-- CAMPANHAS -->
+  <div class="ccard">
+    <div class="ctit">Campanhas</div>
+    <p class="chint" style="margin-bottom:12px">Cadastre campanhas com sigla e nome. A sigla aparece como opção ao designar um território.</p>
+    <div id="campanhasList"></div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:flex-end">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em">Sigla</label>
+        <input class="inp" id="cpSigla" placeholder="CC" style="width:70px;height:34px;font-family:var(--mono);text-transform:uppercase" maxlength="6" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px">
+        <label style="font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em">Nome completo</label>
+        <input class="inp" id="cpNome" placeholder="Campanha de Celebração" style="height:34px">
+      </div>
+      <button class="btn btn-sv" onclick="addCampanha()" style="height:34px">Adicionar</button>
+    </div>
+  </div>
+
   <!-- DADOS -->
   <div class="ccard">
     <div class="ctit">Dados locais</div>
@@ -1049,6 +1078,7 @@ let anoAtual = null;       // extracted from imported xlsx (e.g. 2026)
 let congName = '';             // congregation name set in config
 let activeTab= 'indicar';
 let bFiltro  = '';
+let ordemCres = false; // false=urgência, true=crescente por número
 
 // ── PERSIST ──
 function salvarDados(){ try{localStorage.setItem(KEY_DADOS,JSON.stringify(dados));if(anoAtual)localStorage.setItem('tj_ano',anoAtual);}catch(e){} }
@@ -1139,6 +1169,10 @@ async function sincFB(){
           const lista = change.doc.data().lista;
           if(lista){ _msgsCache=lista; localStorage.setItem(KEY_MSGS, JSON.stringify(lista)); renderMensagens(); }
         }
+        if(id === 'campanhas'){
+          const lista = change.doc.data().lista;
+          if(lista){ _campCache=lista; localStorage.setItem(KEY_CAMP, JSON.stringify(lista)); renderCampanhas(); }
+        }
       });
     });
 
@@ -1171,6 +1205,16 @@ async function sincFB(){
         if(local) await db.collection('tj_config').doc('mensagens').set({lista:local,updatedAt:new Date().toISOString()});
       }
     }catch(e){ console.error('Msgs sync error:',e); }
+    try{
+      const snapCp = await db.collection('tj_config').doc('campanhas').get();
+      if(snapCp.exists){
+        const lista=snapCp.data().lista;
+        if(lista){ _campCache=lista; localStorage.setItem(KEY_CAMP,JSON.stringify(lista)); }
+      } else {
+        const local=JSON.parse(localStorage.getItem(KEY_CAMP)||'null');
+        if(local) await db.collection('tj_config').doc('campanhas').set({lista:local,updatedAt:new Date().toISOString()});
+      }
+    }catch(e){ console.error('Camp sync error:',e); }
 
   }catch(e){ setSyncStatus('offline'); console.error(e); }
 }
@@ -1323,9 +1367,14 @@ function bairroChips(){
       <div class="chip${bFiltro===''?' on':''}" onclick="setBairro('')">Todos</div>
       ${bs.map(b=>`<div class="chip${bFiltro===b?' on':''}" onclick="setBairro('${b}')">${b.replace('Vitalino Fonseca','V.Fonseca')}</div>`).join('')}
     </div>
-    <div class="search-wrap">
-      <div class="search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
-      <input class="search-inp" type="text" id="srch" placeholder="Buscar território…" oninput="renderIndicar()">
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+      <button class="btn-ordem${ordemCres?' on':''}" onclick="toggleOrdem()" title="Alternar ordenação">
+        ${ordemCres ? '↑ Número' : '↓ Urgência'}
+      </button>
+      <div class="search-wrap">
+        <div class="search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+        <input class="search-inp" type="text" id="srch" placeholder="Buscar território…" oninput="renderIndicar()">
+      </div>
     </div>
   </div>
   <div class="legend-bar">
@@ -1508,12 +1557,16 @@ function renderIndicar(){
   let lista=[...dados];
   if(bFiltro) lista=lista.filter(t=>t.desc===bFiltro);
   if(busca) lista=lista.filter(t=>String(t.n).includes(busca)||t.desc.toLowerCase().includes(busca)||t.designacoes.some(d=>d.nome&&d.nome.toLowerCase().includes(busca)));
-  lista.sort((a,b)=>{
-    const pa=prioridade(a),pb=prioridade(b);
-    if(pa!==pb)return pb-pa;
-    const ua=ultConcl(a)||'0000-00-00',ub=ultConcl(b)||'0000-00-00';
-    return ua<ub?-1:ua>ub?1:0;
-  });
+  if(ordemCres){
+    lista.sort((a,b)=>parseInt(a.n)-parseInt(b.n)||String(a.n).localeCompare(String(b.n)));
+  } else {
+    lista.sort((a,b)=>{
+      const pa=prioridade(a),pb=prioridade(b);
+      if(pa!==pb)return pb-pa;
+      const ua=ultConcl(a)||'0000-00-00',ub=ultConcl(b)||'0000-00-00';
+      return ua<ub?-1:ua>ub?1:0;
+    });
+  }
   const urg2cls={red:'u-red',ora:'u-ora',grn:'u-grn',blu:'u-blu',gry:'u-gry'};
   el.innerHTML=bairroChips()+`<div class="tlist">`+lista.map(t=>{
     const urg=urgencia(t),dl=diasLbl(t);
@@ -1523,21 +1576,46 @@ function renderIndicar(){
     const rows = t.designacoes.map((d,i)=>{
       let seletor;
       if(!_cts.length){
-        seletor=`<div class="no-contatos-inline" onclick="switchTab('config');toast('Cadastre os dirigentes em Config')">⚠ Cadastre dirigentes</div>`;
+        // Sem contatos: campo livre
+        seletor=`<div style="display:flex;flex-direction:column;gap:4px;flex:1">
+          <div class="no-contatos-inline" onclick="switchTab('config');toast('Cadastre os dirigentes em Config')">⚠ Cadastre dirigentes</div>
+          <input class="inp" placeholder="ou digite ex: Lucas/Ramon ou Lucas(CC)" value="${esc(d.nome||'')}"
+            style="font-size:11px" onchange="updD('${t.n}',${i},'nome',this.value)">
+        </div>`;
       } else {
-        const opts=_cts.map(c=>`<option value="${esc(c.nome)}" ${c.nome===d.nome?'selected':''}>${esc(c.nome)}</option>`).join('');
-        seletor=`<select class="contato-sel" onchange="updD('${t.n}',${i},'nome',this.value);renderIndicar()">
-          <option value="">— Selecionar dirigente —</option>${opts}
-        </select>`;
+        // Com contatos: seletor principal + campo extra para parceiro/observação
+        // Separa nome base de sufixo: "Lucas/Ramon" -> base="Lucas", extra="/Ramon"
+        // "Marcelo(CC)" -> base="Marcelo", extra="(CC)"
+        const nomeCompleto = d.nome||'';
+        const matchExtra = nomeCompleto.match(/^([^/(]+)(.*)/);
+        const nomeBase = matchExtra ? matchExtra[1].trim() : nomeCompleto;
+        const nomeExtra = matchExtra ? matchExtra[2].trim() : '';
+        const opts=_cts.map(c=>`<option value="${esc(c.nome)}" ${c.nome===nomeBase?'selected':''}>${esc(c.nome)}</option>`).join('');
+        seletor=`<div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0">
+          <select class="contato-sel" onchange="updNomeBase('${t.n}',${i},this.value)">
+            <option value="">— Selecionar —</option>${opts}
+          </select>
+          <input class="inp" placeholder="+ parceiro ou (CC) ex: /Ramon ou (CC)" value="${esc(nomeExtra)}"
+            style="font-size:10px;height:26px" onchange="updNomeExtra('${t.n}',${i},this.value)">
+        </div>`;
       }
+      const camps = getCampanhas();
+      const campOpts = camps.map(c=>`<option value="${esc(c.sigla)}" ${c.sigla===d.camp?'selected':''}>${c.sigla} – ${c.nome}</option>`).join('');
+      const campSel = camps.length ? `
+        <select class="contato-sel" style="width:auto;min-width:80px;flex-shrink:0;font-family:var(--mono);font-size:10px"
+          onchange="updD('${t.n}',${i},'camp',this.value)">
+          <option value="">Sem camp.</option>${campOpts}
+        </select>` : '';
       const wapBtns = wapInline(t, d.nome);
       return`<div class="desig-row">
         <div class="desig-fields">
           ${seletor}
+          ${campSel}
           <input class="inp inp-d" type="date" value="${d.desig||''}" onchange="updD('${t.n}',${i},'desig',this.value)" style="width:140px">
           <input class="inp inp-d" type="date" value="${d.concl||''}" onchange="updD('${t.n}',${i},'concl',this.value)" style="width:140px">
           <button class="btn-del" onclick="delD('${t.n}',${i})">×</button>
         </div>
+        ${d.camp ? `<div style="font-family:var(--mono);font-size:10px;color:var(--accent2)">🏷 ${d.camp} – ${camps.find(c=>c.sigla===d.camp)?.nome||''}</div>` : ''}
         ${wapBtns ? `<div class="desig-wap">${wapBtns}</div>` : ''}
       </div>`;
     }).join('');
@@ -1548,7 +1626,7 @@ function renderIndicar(){
         <div class="tdesc">${t.desc||'—'}</div>
         <div class="tmeta">
           <div class="tdays ${dl.cls}">${dl.txt}</div>
-          ${ult?`<div class="twho">${esc(ult.nome||'')}</div>`:''}
+          ${ult?`<div class="twho">${esc(ult.nome||'')}${ult.camp?` <span style="font-family:var(--mono);font-size:9px;color:var(--accent2);opacity:.8">(${ult.camp})</span>`:''}</div>`:''}
         </div>
         <div class="tchv" id="chv-${t.n}">▶</div>
       </div>
@@ -1574,8 +1652,27 @@ function renderIndicar(){
 function esc(s){ return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 function toggleT(n){ const b=document.getElementById('body-'+n),c=document.getElementById('chv-'+n); const o=b.classList.toggle('open'); c.classList.toggle('open',o); c.textContent=o?'▼':'▶'; }
 function setBairro(b){ bFiltro=b; renderIndicar(); }
+function toggleOrdem(){ ordemCres=!ordemCres; renderIndicar(); }
 function abrirTerritorio(n){ bFiltro=''; renderIndicar(); setTimeout(()=>{ const el=document.getElementById('body-'+n); if(el){ el.closest('.titem').scrollIntoView({behavior:'smooth',block:'start'}); setTimeout(()=>{ if(!el.classList.contains('open')) toggleT(n); },400); } },100); }
 function updD(n,i,f,v){ const t=dados.find(x=>x.n===n); if(t) t.designacoes[i][f]=v; }
+function updNomeBase(n,i,base){
+  const t=dados.find(x=>x.n===n); if(!t) return;
+  const atual=t.designacoes[i].nome||'';
+  // Mantém o sufixo (/Ramon, (CC) etc) e troca só o nome base
+  const matchExtra=atual.match(/^[^/(]+(.*)/);
+  const extra=matchExtra?matchExtra[1].trim():'';
+  t.designacoes[i].nome=extra?`${base}${extra}`:base;
+}
+function updNomeExtra(n,i,extra){
+  const t=dados.find(x=>x.n===n); if(!t) return;
+  const atual=t.designacoes[i].nome||'';
+  const matchBase=atual.match(/^([^/(]+)/);
+  const base=matchBase?matchBase[1].trim():'';
+  if(!extra){ t.designacoes[i].nome=base; return; }
+  // Formata: se começa com / ou (, mantém; se não, adiciona /
+  const sep=extra.startsWith('/')||extra.startsWith('(')?'':'/';
+  t.designacoes[i].nome=`${base}${sep}${extra}`;
+}
 function addD(n){ const t=dados.find(x=>x.n===n); if(t){ t.designacoes.push({nome:'',desig:hoje(),concl:''}); renderIndicar(); setTimeout(()=>{ toggleT(n); document.getElementById('body-'+n).scrollIntoView({behavior:'smooth',block:'nearest'}); },50); } }
 function delD(n,i){ const t=dados.find(x=>x.n===n); if(t){ t.designacoes.splice(i,1); svTerr(n); } }
 function conclHj(n){ const t=dados.find(x=>x.n===n); if(!t)return; t.designacoes[t.designacoes.length-1].concl=hoje(); svTerr(n); }
@@ -2227,6 +2324,55 @@ function fecharModalMsg(){
   if(m) m.remove();
 }
 
+
+// ── CAMPANHAS ──
+const KEY_CAMP = 'tj_camp_v1';
+let _campCache = null;
+const CAMP_PADRAO = [
+  {sigla:'CC', nome:'Campanha de Celebração'},
+  {sigla:'CM', nome:'Campanha Memorial'}
+];
+
+function getCampanhas(){
+  if(_campCache!==null) return _campCache;
+  try{ const s=localStorage.getItem(KEY_CAMP); _campCache=s?JSON.parse(s):JSON.parse(JSON.stringify(CAMP_PADRAO)); }
+  catch(e){ _campCache=JSON.parse(JSON.stringify(CAMP_PADRAO)); }
+  return _campCache;
+}
+async function saveCampanhas(c){
+  _campCache=c;
+  localStorage.setItem(KEY_CAMP,JSON.stringify(c));
+  if(db){
+    try{ await db.collection('tj_config').doc('campanhas').set({lista:c,updatedAt:new Date().toISOString()}); }
+    catch(e){ console.error('Erro ao salvar campanhas:',e); }
+  }
+}
+function addCampanha(){
+  const sigla=document.getElementById('cpSigla').value.trim().toUpperCase();
+  const nome=document.getElementById('cpNome').value.trim();
+  if(!sigla||!nome){toast('Preencha sigla e nome',true);return;}
+  const c=getCampanhas();
+  if(c.find(x=>x.sigla===sigla)){toast('Sigla já existe',true);return;}
+  c.push({sigla,nome}); saveCampanhas(c);
+  document.getElementById('cpSigla').value='';
+  document.getElementById('cpNome').value='';
+  renderCampanhas(); toast('Campanha salva!');
+}
+function delCampanha(i){
+  const c=getCampanhas(); c.splice(i,1); saveCampanhas(c); renderCampanhas();
+}
+function renderCampanhas(){
+  const el=document.getElementById('campanhasList'); if(!el) return;
+  const c=getCampanhas();
+  if(!c.length){el.innerHTML='<p class="chint" style="margin-bottom:8px">Nenhuma campanha cadastrada.</p>';return;}
+  el.innerHTML=c.map((x,i)=>`
+    <div class="contato-item">
+      <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent2);min-width:44px">${x.sigla}</div>
+      <div class="contato-nome" style="font-size:12px">${x.nome}</div>
+      <button class="btn-del" onclick="delCampanha(${i})">×</button>
+    </div>`).join('');
+}
+
 // ── TABS ──
 function switchTab(t){
   document.querySelectorAll('.ntab').forEach((el,i)=>el.classList.toggle('active',['indicar','registrar','historico','stats','importar','config'][i]===t));
@@ -2235,7 +2381,7 @@ function switchTab(t){
   activeTab=t;
   if(t==='registrar') renderRegistrar();
   else if(t==='historico') renderHist();
-  else if(t==='config'){ renderContatos(); renderMensagens(); atualizarStatusCard(); const ci=document.getElementById('cfgCong'); if(ci) ci.value=congName||''; }
+  else if(t==='config'){ renderContatos(); renderMensagens(); renderCampanhas(); atualizarStatusCard(); const ci=document.getElementById('cfgCong'); if(ci) ci.value=congName||''; }
   else if(t==='stats') renderStats();
 }
 
