@@ -1024,27 +1024,40 @@ async function sincFB(){
       salvarDados(); renderAll();
     });
 
-    // Listener: cartões — escuta QUALQUER alteração na coleção tj_cards
+    // Listener: cartões
     db.collection('tj_cards').onSnapshot(snapshot=>{
       snapshot.docChanges().forEach(change=>{
         const n = change.doc.id;
         if(change.type === 'removed'){
-          delete cardsCache[n];
-          delete cards[n];
+          delete cardsCache[n]; delete cards[n];
         } else {
           const img = change.doc.data().img;
-          if(img){
-            cardsCache[n] = img;
-            cards[n] = img;
-          }
+          if(img){ cardsCache[n]=img; cards[n]=img; }
         }
       });
-      // Só re-renderiza se tiver mudança real
-      if(snapshot.docChanges().length > 0){
-        salvarCards();
-        renderAll();
-      }
+      if(snapshot.docChanges().length > 0){ salvarCards(); renderAll(); }
     });
+
+    // Listener: contatos e mensagens (tj_config)
+    db.collection('tj_config').onSnapshot(snapshot=>{
+      snapshot.docChanges().forEach(change=>{
+        const id = change.doc.id;
+        if(id === 'contatos'){
+          const lista = change.doc.data().lista || [];
+          _contatosCache = lista;
+          localStorage.setItem(KEY_CONTATOS, JSON.stringify(lista));
+          renderContatos(); renderAll();
+        }
+        if(id === 'mensagens'){
+          const lista = change.doc.data().lista;
+          if(lista){ _msgsCache=lista; localStorage.setItem(KEY_MSGS, JSON.stringify(lista)); renderMensagens(); }
+        }
+      });
+    });
+
+    // Carrega contatos e mensagens do Firestore na primeira conexão
+    carregarContatosFirestore();
+    carregarMensagensFirestore();
 
   }catch(e){ setSyncStatus('offline'); console.error(e); }
 }
@@ -1221,16 +1234,20 @@ function wapButtons(n, desc){
   if(!contatos.length){
     return`<div class="wap-btn-row"><span class="wap-hint">Cadastre dirigentes em Config para enviar mensagens.</span></div>`;
   }
-  // Para cada contato, um dropdown/botão por mensagem
+  const wapIcon = `<svg viewBox="0 0 24 24" width="13" height="13" style="flex-shrink:0;fill:#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.522 5.825L.057 23.885a.5.5 0 00.615.617l6.158-1.479A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.925 0-3.73-.509-5.29-1.4l-.379-.222-3.927.943.977-3.845-.247-.396A9.96 9.96 0 012 12c0-5.514 4.487-10 10-10s10 4.486 10 10-4.486 10-10 10z"/></svg>`;
   let html = '';
   contatos.forEach(c=>{
-    html += `<div style="margin-bottom:10px">
-      <div style="font-family:var(--display);font-size:12px;font-weight:600;margin-bottom:5px;color:var(--txt2)">${wapSVG} ${c.nome}</div>
-      <div class="wap-btn-row">`;
+    html += `<div style="margin-bottom:12px;padding:10px 12px;background:var(--surface3);border-radius:var(--r-md);border:1px solid var(--brd)">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        ${wapIcon}
+        <span style="font-family:var(--display);font-size:12px;font-weight:700;color:var(--txt)">${c.nome}</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--txt3);margin-left:auto">${c.num}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">`;
     msgs.forEach((msg,i)=>{
       const texto = processarMsg(msg.texto, terr, c);
       const url = `https://wa.me/${c.num}?text=${encodeURIComponent(texto)}`;
-      html += `<a class="btn-wap-msg" href="${url}" target="_blank" rel="noopener">${wapSVG}${msg.label}</a>`;
+      html += `<a class="btn-wap-msg" href="${url}" target="_blank" rel="noopener">${wapIcon}${msg.label}</a>`;
     });
     html += `</div></div>`;
   });
@@ -1762,8 +1779,36 @@ function addCardPreview(label, ok){
 
 // ── CONTATOS ──
 // ── CONTATOS ──
-function getContatos(){ try{return JSON.parse(localStorage.getItem(KEY_CONTATOS)||'[]');}catch(e){return[];} }
-function saveContatos(c){ localStorage.setItem(KEY_CONTATOS,JSON.stringify(c)); }
+// ── CONTATOS: localStorage + Firestore ──
+let _contatosCache = null; // cache em memória
+
+function getContatos(){
+  if(_contatosCache !== null) return _contatosCache;
+  try{ const s=localStorage.getItem(KEY_CONTATOS); _contatosCache=s?JSON.parse(s):[]; }catch(e){ _contatosCache=[]; }
+  return _contatosCache;
+}
+async function saveContatos(c){
+  _contatosCache = c;
+  localStorage.setItem(KEY_CONTATOS, JSON.stringify(c));
+  // Salva no Firestore para sincronizar entre dispositivos
+  if(db){
+    try{
+      await db.collection('tj_config').doc('contatos').set({lista:c, updatedAt:new Date().toISOString()});
+    }catch(e){ console.error('Erro ao salvar contatos:', e); }
+  }
+}
+async function carregarContatosFirestore(){
+  if(!db) return;
+  try{
+    const snap = await db.collection('tj_config').doc('contatos').get();
+    if(snap.exists){
+      const lista = snap.data().lista || [];
+      _contatosCache = lista;
+      localStorage.setItem(KEY_CONTATOS, JSON.stringify(lista));
+      renderContatos(); renderAll();
+    }
+  }catch(e){ console.error('Erro ao carregar contatos:', e); }
+}
 function addContato(){
   const n=document.getElementById('ctNm').value.trim(), num=document.getElementById('ctNum').value.trim().replace(/\D/g,'');
   if(!n||!num){toast('Preencha nome e número',true);return;}
@@ -1795,8 +1840,34 @@ const MSGS_PADRAO = [
     texto: 'Olá, tudo bem {dirigente}? Gostaria de saber se você terminou o cartão {territorio} ({bairro}). 😊'
   }
 ];
-function getMensagens(){ try{ const s=localStorage.getItem(KEY_MSGS); return s?JSON.parse(s):JSON.parse(JSON.stringify(MSGS_PADRAO)); }catch(e){ return JSON.parse(JSON.stringify(MSGS_PADRAO)); } }
-function saveMensagens(m){ localStorage.setItem(KEY_MSGS,JSON.stringify(m)); }
+let _msgsCache = null;
+function getMensagens(){
+  if(_msgsCache !== null) return _msgsCache;
+  try{ const s=localStorage.getItem(KEY_MSGS); _msgsCache=s?JSON.parse(s):JSON.parse(JSON.stringify(MSGS_PADRAO)); }
+  catch(e){ _msgsCache=JSON.parse(JSON.stringify(MSGS_PADRAO)); }
+  return _msgsCache;
+}
+async function saveMensagens(m){
+  _msgsCache = m;
+  localStorage.setItem(KEY_MSGS, JSON.stringify(m));
+  if(db){
+    try{
+      await db.collection('tj_config').doc('mensagens').set({lista:m, updatedAt:new Date().toISOString()});
+    }catch(e){ console.error('Erro ao salvar mensagens:', e); }
+  }
+}
+async function carregarMensagensFirestore(){
+  if(!db) return;
+  try{
+    const snap = await db.collection('tj_config').doc('mensagens').get();
+    if(snap.exists){
+      const lista = snap.data().lista || JSON.parse(JSON.stringify(MSGS_PADRAO));
+      _msgsCache = lista;
+      localStorage.setItem(KEY_MSGS, JSON.stringify(lista));
+      renderMensagens();
+    }
+  }catch(e){ console.error('Erro ao carregar mensagens:', e); }
+}
 function addMensagem(){
   const m=getMensagens(); m.push({label:'Nova mensagem',texto:'Olá, {dirigente}!'});
   saveMensagens(m); renderMensagens(); toast('Mensagem adicionada!');
