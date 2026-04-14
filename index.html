@@ -774,6 +774,72 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);font-size:14p
 .btn-wap-sm:hover{background:rgba(37,211,102,.22)}
 .btn-wap-sm svg{width:12px;height:12px;fill:var(--wap);flex-shrink:0}
 
+
+/* ── BTN MSG COMPACTO ── */
+.btn-msg-zap{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  padding:6px 12px;border-radius:var(--r-sm);cursor:pointer;
+  background:rgba(37,211,102,.15);color:var(--wap);
+  border:1px solid rgba(37,211,102,.3);
+  transition:all .18s;white-space:nowrap;flex-shrink:0;
+}
+.btn-msg-zap:hover{background:rgba(37,211,102,.25)}
+.btn-msg-zap svg{width:14px;height:14px;fill:var(--wap)}
+
+/* ── MODAL ENVIAR MSG ── */
+.msg-modal-bg{
+  position:fixed;inset:0;z-index:9000;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;padding:16px;
+}
+.msg-modal{
+  background:var(--surface);border:1px solid var(--brd2);
+  border-radius:var(--r-xl);padding:24px;
+  width:100%;max-width:420px;
+  animation:fadeUp .2s ease;
+}
+.msg-modal-title{
+  font-family:var(--display);font-size:16px;font-weight:800;
+  color:var(--txt);margin-bottom:4px;
+}
+.msg-modal-sub{font-family:var(--mono);font-size:10px;color:var(--txt3);margin-bottom:16px}
+.msg-modal-card{
+  border-radius:var(--r-md);overflow:hidden;
+  border:1px solid var(--brd);margin-bottom:14px;
+  background:var(--surface3);
+}
+.msg-modal-card img{width:100%;display:block}
+.msg-modal-card-empty{
+  padding:16px;text-align:center;
+  font-family:var(--mono);font-size:10px;color:var(--txt3);
+}
+.msg-modal-hint{
+  font-family:var(--mono);font-size:10px;color:var(--orange);
+  background:var(--orange-bg);border:1px solid rgba(232,145,74,.2);
+  border-radius:var(--r-sm);padding:8px 12px;margin-bottom:14px;
+  display:flex;align-items:flex-start;gap:6px;line-height:1.5;
+}
+.msg-modal-btns{display:flex;flex-direction:column;gap:8px}
+.msg-modal-send{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px;border-radius:var(--r-md);cursor:pointer;
+  background:rgba(37,211,102,.15);color:var(--wap);
+  border:1px solid rgba(37,211,102,.3);
+  font-family:var(--display);font-size:13px;font-weight:700;
+  text-decoration:none;transition:all .18s;
+}
+.msg-modal-send:hover{background:rgba(37,211,102,.25)}
+.msg-modal-send svg{width:18px;height:18px;fill:var(--wap)}
+.msg-modal-close{
+  padding:10px;border-radius:var(--r-md);cursor:pointer;
+  background:transparent;color:var(--txt3);
+  border:1px solid var(--brd);
+  font-family:var(--mono);font-size:11px;text-align:center;
+  transition:all .18s;
+}
+.msg-modal-close:hover{background:var(--surface2);color:var(--txt)}
+
 datalist{display:none}
 </style>
 </head>
@@ -1511,7 +1577,7 @@ function renderRegistrar(){
   el.innerHTML=at.map(t=>{
     const u=t.designacoes[t.designacoes.length-1];
     const d=diasDe(u.desig);
-    const wapBtnsReg = wapInline(t, u.nome);
+    const temContato = getContatos().find(c=>c.nome===u.nome);
     return`<div class="acard">
       <div class="acard-top">
         <div class="abar"></div>
@@ -1521,11 +1587,14 @@ function renderRegistrar(){
           <div class="asince">${t.desc} · desde ${fmtD(u.desig)} (${d}d)</div>
         </div>
         <div class="aacts">
+          ${temContato ? `<button class="btn-msg-zap" onclick="abrirModalMsg('${t.n}')">
+            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.522 5.825L.057 23.885a.5.5 0 00.615.617l6.158-1.479A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.925 0-3.73-.509-5.29-1.4l-.379-.222-3.927.943.977-3.845-.247-.396A9.96 9.96 0 012 12c0-5.514 4.487-10 10-10s10 4.486 10 10-4.486 10-10 10z"/></svg>
+            Msg
+          </button>` : ''}
           <button class="btn-ch" onclick="conclRap('${t.n}')">✓ Hoje</button>
           <button class="btn-cd" onclick="conclDt('${t.n}')">Data…</button>
         </div>
       </div>
-      ${wapBtnsReg ? `<div class="acard-wap">${wapBtnsReg}</div>` : ''}
     </div>`;
   }).join('');
   document.getElementById('rDD').value=hoje();
@@ -2062,6 +2131,52 @@ function setCfgSt_old(m,ok){ setCfgSt(m,ok); }
 
 function limparTudo(){ if(!confirm('Apagar todos os dados e cartões?'))return; dados=[]; cards={}; salvarDados(); salvarCards(); renderAll(); toast('Dados apagados.'); }
 function limparCartoes(){ if(!confirm('Apagar todos os cartões?'))return; cards={}; Object.keys(cardsCache).forEach(k=>delete cardsCache[k]); salvarCards(); renderAll(); toast('Cartões limpos.'); }
+
+
+// ── MODAL ENVIAR MENSAGEM ──
+function abrirModalMsg(n){
+  const t = dados.find(x=>x.n===n);
+  if(!t) return;
+  const u = t.designacoes[t.designacoes.length-1];
+  const contato = getContatos().find(c=>c.nome===u?.nome);
+  if(!contato){ toast('Dirigente não encontrado nos contatos', true); return; }
+  const msgs = getMensagens();
+  const imgUrl = cardsCache[n] || cards[n] || null;
+
+  const botoesMsg = msgs.map((msg,i)=>{
+    const texto = processarMsg(msg.texto, t, contato);
+    const url = `https://wa.me/${contato.num}?text=${encodeURIComponent(texto)}`;
+    return`<a class="msg-modal-send" href="${url}" target="_blank" rel="noopener" onclick="setTimeout(fecharModalMsg,500)">
+      <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.522 5.825L.057 23.885a.5.5 0 00.615.617l6.158-1.479A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.925 0-3.73-.509-5.29-1.4l-.379-.222-3.927.943.977-3.845-.247-.396A9.96 9.96 0 012 12c0-5.514 4.487-10 10-10s10 4.486 10 10-4.486 10-10 10z"/></svg>
+      ${msg.label}
+    </a>`;
+  }).join('');
+
+  const cardHtml = imgUrl
+    ? `<div class="msg-modal-card"><img src="${imgUrl}" alt="Cartão ${n}"></div>
+       <div class="msg-modal-hint">📎 Salve ou copie a imagem acima e anexe no WhatsApp ao enviar a indicação.</div>`
+    : `<div class="msg-modal-card"><div class="msg-modal-card-empty">Sem cartão cadastrado para o território ${n}</div></div>`;
+
+  const modal = document.createElement('div');
+  modal.className = 'msg-modal-bg';
+  modal.id = 'msgModal';
+  modal.innerHTML = `
+    <div class="msg-modal">
+      <div class="msg-modal-title">Território ${n} — ${t.desc}</div>
+      <div class="msg-modal-sub">Dirigente: ${contato.nome} · ${contato.num}</div>
+      ${cardHtml}
+      <div class="msg-modal-btns">
+        ${botoesMsg}
+        <button class="msg-modal-close" onclick="fecharModalMsg()">Fechar</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e=>{ if(e.target===modal) fecharModalMsg(); });
+  document.body.appendChild(modal);
+}
+function fecharModalMsg(){
+  const m = document.getElementById('msgModal');
+  if(m) m.remove();
+}
 
 // ── TABS ──
 function switchTab(t){
