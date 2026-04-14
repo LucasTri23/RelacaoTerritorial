@@ -753,6 +753,25 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);font-size:14p
 }
 .no-contatos-inline:hover{background:rgba(232,145,74,.15)}
 
+
+/* ── WAP INLINE NA DESIGNAÇÃO ── */
+.desig-row{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid var(--brd)}
+.desig-row:last-child{border-bottom:none}
+.desig-fields{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.desig-fields .contato-sel{flex:1;min-width:120px}
+.desig-fields .inp-d{width:130px;flex-shrink:0}
+.desig-wap{display:flex;gap:5px;flex-wrap:wrap}
+.btn-wap-sm{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  padding:5px 10px;border-radius:var(--r-sm);cursor:pointer;
+  background:rgba(37,211,102,.12);color:var(--wap);
+  border:1px solid rgba(37,211,102,.25);text-decoration:none;
+  transition:all .18s;white-space:nowrap;
+}
+.btn-wap-sm:hover{background:rgba(37,211,102,.22)}
+.btn-wap-sm svg{width:12px;height:12px;fill:var(--wap);flex-shrink:0}
+
 datalist{display:none}
 </style>
 </head>
@@ -1227,6 +1246,23 @@ function bairroChips(){
 // ── WHATSAPP SVG ──
 const wapSVG=`<svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.522 5.825L.057 23.885a.5.5 0 00.615.617l6.158-1.479A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.925 0-3.73-.509-5.29-1.4l-.379-.222-3.927.943.977-3.845-.247-.396A9.96 9.96 0 012 12c0-5.514 4.487-10 10-10s10 4.486 10 10-4.486 10-10 10z"/></svg>`;
 
+// Gera botões WhatsApp para uma linha de designação específica
+function wapInline(terr, nomeContato){
+  if(!nomeContato) return '';
+  const contatos = getContatos();
+  const msgs = getMensagens();
+  const c = contatos.find(x=>x.nome===nomeContato);
+  if(!c) return '';
+  return msgs.map(msg=>{
+    const texto = processarMsg(msg.texto, terr, c);
+    const url = `https://wa.me/${c.num}?text=${encodeURIComponent(texto)}`;
+    return`<a class="btn-wap-sm" href="${url}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.522 5.825L.057 23.885a.5.5 0 00.615.617l6.158-1.479A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.925 0-3.73-.509-5.29-1.4l-.379-.222-3.927.943.977-3.845-.247-.396A9.96 9.96 0 012 12c0-5.514 4.487-10 10-10s10 4.486 10 10-4.486 10-10 10z"/></svg>
+      ${msg.label}
+    </a>`;
+  }).join('');
+}
+
 function wapButtons(n, desc){
   const contatos = getContatos();
   const msgs     = getMensagens();
@@ -1390,24 +1426,26 @@ function renderIndicar(){
     const ult=t.designacoes.length?t.designacoes[t.designacoes.length-1]:null;
     const uc=ultConcl(t);
     const _cts = getContatos();
-    const rows=t.designacoes.map((d,i)=>{
-      // Seletor de contato
-      let nomeCel;
+    const rows = t.designacoes.map((d,i)=>{
+      let seletor;
       if(!_cts.length){
-        nomeCel=`<div class="no-contatos-inline" onclick="switchTab('config');toast('Cadastre os dirigentes em Config')">⚠ Cadastre dirigentes em Config</div>`;
+        seletor=`<div class="no-contatos-inline" onclick="switchTab('config');toast('Cadastre os dirigentes em Config')">⚠ Cadastre dirigentes</div>`;
       } else {
-        const opts = _cts.map(c=>`<option value="${esc(c.nome)}" ${c.nome===d.nome?'selected':''}>${esc(c.nome)}</option>`).join('');
-        nomeCel=`<select class="contato-sel" onchange="updD('${t.n}',${i},'nome',this.value)">
-          <option value="">— Selecionar —</option>
-          ${opts}
+        const opts=_cts.map(c=>`<option value="${esc(c.nome)}" ${c.nome===d.nome?'selected':''}>${esc(c.nome)}</option>`).join('');
+        seletor=`<select class="contato-sel" onchange="updD('${t.n}',${i},'nome',this.value);renderIndicar()">
+          <option value="">— Selecionar dirigente —</option>${opts}
         </select>`;
       }
-      return`<tr>
-        <td>${nomeCel}</td>
-        <td><input class="inp inp-d" type="date" value="${d.desig||''}" onchange="updD('${t.n}',${i},'desig',this.value)"></td>
-        <td><input class="inp inp-d" type="date" value="${d.concl||''}" onchange="updD('${t.n}',${i},'concl',this.value)"></td>
-        <td><button class="btn-del" onclick="delD('${t.n}',${i})">×</button></td>
-      </tr>`;
+      const wapBtns = wapInline(t, d.nome);
+      return`<div class="desig-row">
+        <div class="desig-fields">
+          ${seletor}
+          <input class="inp inp-d" type="date" value="${d.desig||''}" onchange="updD('${t.n}',${i},'desig',this.value)" style="width:140px">
+          <input class="inp inp-d" type="date" value="${d.concl||''}" onchange="updD('${t.n}',${i},'concl',this.value)" style="width:140px">
+          <button class="btn-del" onclick="delD('${t.n}',${i})">×</button>
+        </div>
+        ${wapBtns ? `<div class="desig-wap">${wapBtns}</div>` : ''}
+      </div>`;
     }).join('');
     return`<div class="titem">
       <div class="thead" onclick="toggleT('${t.n}')">
@@ -1422,12 +1460,13 @@ function renderIndicar(){
       </div>
       <div class="tbody" id="body-${t.n}">
         ${cardZone(t.n)}
-        ${wapButtons(t.n, t.desc)}
         ${uc ? `<div class="ult-concl">✓ Última conclusão: <strong>${fmtD(uc)}</strong></div>` : `<div class="ult-concl-none">— Nunca concluído</div>`}
-        <table class="dtbl">
-          <thead><tr><th>Designado para</th><th>Designação</th><th>Conclusão</th><th></th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <div style="margin-bottom:8px">
+          <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);margin-bottom:6px;display:grid;grid-template-columns:1fr 140px 140px 28px;gap:6px;padding:0 2px">
+            <span>Dirigente</span><span>Designação</span><span>Conclusão</span><span></span>
+          </div>
+          ${rows}
+        </div>
         <div class="bacts">
           <button class="btn btn-add" onclick="addD('${t.n}')">+ Adicionar designação</button>
           ${emAndamento(t)?`<button class="btn btn-cl" onclick="conclHj('${t.n}')">✓ Concluir hoje</button>`:''}
