@@ -731,6 +731,28 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);font-size:14p
 .contato-nome{font-family:var(--display);font-size:13px;font-weight:600;flex:1}
 .contato-num{font-family:var(--mono);font-size:10px;color:var(--txt3)}
 
+
+/* ── SELETOR DE CONTATO ── */
+.contato-sel-wrap{position:relative}
+.contato-sel{
+  width:100%;font-family:var(--sans);font-size:12px;height:30px;
+  padding:0 8px;border:1px solid var(--brd);border-radius:6px;
+  background:var(--surface3);color:var(--txt);outline:none;
+  cursor:pointer;transition:border-color .18s;appearance:none;
+  -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5a70'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;
+  padding-right:24px;
+}
+.contato-sel:focus{border-color:var(--accent)}
+.no-contatos-inline{
+  font-family:var(--mono);font-size:10px;color:var(--orange);
+  background:var(--orange-bg);border:1px solid rgba(232,145,74,.2);
+  border-radius:6px;padding:5px 10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;white-space:nowrap;
+}
+.no-contatos-inline:hover{background:rgba(232,145,74,.15)}
+
 datalist{display:none}
 </style>
 </head>
@@ -775,7 +797,11 @@ datalist{display:none}
     <div class="ftit">Registro manual</div>
     <div class="fgrid">
       <div class="fg"><label>Território nº</label><input class="inp" id="rN" list="dlN" autocomplete="off" placeholder="Ex: 29"></div>
-      <div class="fg"><label>Designado para</label><input class="inp" id="rNm" list="dlP" autocomplete="off" placeholder="Nome"></div>
+      <div class="fg"><label>Designado para</label>
+        <div id="rNmWrap">
+          <input class="inp" id="rNm" list="dlP" autocomplete="off" placeholder="Nome">
+        </div>
+      </div>
       <div class="fg"><label>Data designação</label><input class="inp inp-d" id="rDD" type="date"></div>
       <div class="fg"><label>Data conclusão</label><input class="inp inp-d" id="rDC" type="date"></div>
     </div>
@@ -989,12 +1015,37 @@ async function sincFB(){
       await pushFB();
     }
     setSyncStatus('online');
+
+    // Listener: dados da planilha
     docRef.onSnapshot(s=>{
       if(!s.exists)return;
       const r=s.data();
       if(r.dados) dados=r.dados;
       salvarDados(); renderAll();
     });
+
+    // Listener: cartões — escuta QUALQUER alteração na coleção tj_cards
+    db.collection('tj_cards').onSnapshot(snapshot=>{
+      snapshot.docChanges().forEach(change=>{
+        const n = change.doc.id;
+        if(change.type === 'removed'){
+          delete cardsCache[n];
+          delete cards[n];
+        } else {
+          const img = change.doc.data().img;
+          if(img){
+            cardsCache[n] = img;
+            cards[n] = img;
+          }
+        }
+      });
+      // Só re-renderiza se tiver mudança real
+      if(snapshot.docChanges().length > 0){
+        salvarCards();
+        renderAll();
+      }
+    });
+
   }catch(e){ setSyncStatus('offline'); console.error(e); }
 }
 async function pushFB(){
@@ -1321,12 +1372,26 @@ function renderIndicar(){
     const urg=urgencia(t),dl=diasLbl(t);
     const ult=t.designacoes.length?t.designacoes[t.designacoes.length-1]:null;
     const uc=ultConcl(t);
-    const rows=t.designacoes.map((d,i)=>`<tr>
-      <td><input class="inp" list="dlP" value="${esc(d.nome||'')}" placeholder="Nome" autocomplete="off" onchange="updD('${t.n}',${i},'nome',this.value)"></td>
-      <td><input class="inp inp-d" type="date" value="${d.desig||''}" onchange="updD('${t.n}',${i},'desig',this.value)"></td>
-      <td><input class="inp inp-d" type="date" value="${d.concl||''}" onchange="updD('${t.n}',${i},'concl',this.value)"></td>
-      <td><button class="btn-del" onclick="delD('${t.n}',${i})">×</button></td>
-    </tr>`).join('');
+    const _cts = getContatos();
+    const rows=t.designacoes.map((d,i)=>{
+      // Seletor de contato
+      let nomeCel;
+      if(!_cts.length){
+        nomeCel=`<div class="no-contatos-inline" onclick="switchTab('config');toast('Cadastre os dirigentes em Config')">⚠ Cadastre dirigentes em Config</div>`;
+      } else {
+        const opts = _cts.map(c=>`<option value="${esc(c.nome)}" ${c.nome===d.nome?'selected':''}>${esc(c.nome)}</option>`).join('');
+        nomeCel=`<select class="contato-sel" onchange="updD('${t.n}',${i},'nome',this.value)">
+          <option value="">— Selecionar —</option>
+          ${opts}
+        </select>`;
+      }
+      return`<tr>
+        <td>${nomeCel}</td>
+        <td><input class="inp inp-d" type="date" value="${d.desig||''}" onchange="updD('${t.n}',${i},'desig',this.value)"></td>
+        <td><input class="inp inp-d" type="date" value="${d.concl||''}" onchange="updD('${t.n}',${i},'concl',this.value)"></td>
+        <td><button class="btn-del" onclick="delD('${t.n}',${i})">×</button></td>
+      </tr>`;
+    }).join('');
     return`<div class="titem">
       <div class="thead" onclick="toggleT('${t.n}')">
         <div class="turg ${urg2cls[urg]}"></div>
@@ -1368,6 +1433,20 @@ function svTerr(n){ salvarDados(); pushFB(); toast('Salvo ✓'); renderAll(); }
 
 // ── REGISTRAR ──
 function renderRegistrar(){
+  // Atualiza seletor de nome no form manual
+  const wrap=document.getElementById('rNmWrap');
+  if(wrap){
+    const cts=getContatos();
+    if(cts.length){
+      wrap.innerHTML=`<select class="inp" id="rNm" style="height:36px;cursor:pointer">
+        <option value="">— Selecionar dirigente —</option>
+        ${cts.map(c=>`<option value="${esc(c.nome)}">${esc(c.nome)}</option>`).join('')}
+      </select>`;
+    } else {
+      wrap.innerHTML=`<input class="inp" id="rNm" list="dlP" autocomplete="off" placeholder="Nome">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--orange);margin-top:4px">Cadastre dirigentes em <strong>Config</strong> para selecioná-los.</div>`;
+    }
+  }
   const at=dados.filter(t=>emAndamento(t)).sort((a,b)=>(a.designacoes.at(-1).desig||'')<(b.designacoes.at(-1).desig||'')?-1:1);
   const el=document.getElementById('listAtivos');
   if(!at.length){ el.innerHTML='<div class="empty">Nenhum território em andamento.</div>'; return; }
