@@ -2352,101 +2352,134 @@ const nomeBase = (u?.nome||’’).match(/^([^/(]+)/)?.[1]?.trim()||’’;
 const contato = contatos.find(c=>c.nome===nomeBase) || contatos.find(c=>c.nome===u?.nome) || null;
 const contatoEfetivo = contato || {nome:’’, num:’’};
 const msgs = getMensagens();
-
-// Busca imagem do cache ou Firestore
 const imgUrl = cardsCache[n] || cards[n] || null;
 
-const wapSvg = `<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#25D366;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.522 5.825L.057 23.885a.5.5 0 00.615.617l6.158-1.479A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.925 0-3.73-.509-5.29-1.4l-.379-.222-3.927.943.977-3.845-.247-.396A9.96 9.96 0 012 12c0-5.514 4.487-10 10-10s10 4.486 10 10-4.486 10-10 10z"/></svg>`;
+const wapSvg = ‘<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#25D366;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.522 5.825L.057 23.885a.5.5 0 00.615.617l6.158-1.479A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.925 0-3.73-.509-5.29-1.4l-.379-.222-3.927.943.977-3.845-.247-.396A9.96 9.96 0 012 12c0-5.514 4.487-10 10-10s10 4.486 10 10-4.486 10-10 10z"/></svg>’;
 
-// Envia mensagem + prepara imagem para anexar
-async function enviarComImagem(texto, num, imgDataUrl){
-const wapUrl = `https://wa.me/${num}?text=${encodeURIComponent(texto)}`;
-
-```
-if(imgDataUrl && navigator.share){
-  try{
-    // Converte dataURL → Blob → File
-    const res  = await fetch(imgDataUrl);
-    const blob = await res.blob();
-    const file = new File([blob], `territorio_${n}.jpg`, {type: blob.type||'image/jpeg'});
-
-    // Copia o texto no clipboard antes de compartilhar
-    try{ await navigator.clipboard.writeText(texto); }catch(e){}
-
-    // Compartilha imagem + texto juntos via Web Share API
-    const shareData = { files:[file], text: texto, title:`Território ${n}` };
-    if(navigator.canShare && navigator.canShare(shareData)){
-      await navigator.share(shareData);
-      fecharModalMsg();
-      return;
-    }
-    // Só imagem (sem texto no share — colar depois)
-    const shareImg = { files:[file], title:`Território ${n}` };
-    if(navigator.canShare && navigator.canShare(shareImg)){
-      try{ await navigator.clipboard.writeText(texto); }catch(e){}
-      toast('Mensagem copiada! Compartilhe a imagem e cole o texto no WhatsApp.', false, 4000);
-      await navigator.share(shareImg);
-      fecharModalMsg();
-      return;
-    }
-  }catch(e){
-    if(e.name==='AbortError'){ return; } // usuário cancelou
-    console.warn('Share API falhou:', e);
-  }
-}
-
-// Fallback: copia texto + abre WhatsApp (sem imagem via URL)
-try{ await navigator.clipboard.writeText(texto); }catch(e){}
-if(imgDataUrl){
-  toast('Mensagem copiada! Abra o WhatsApp, anexe o cartão e cole o texto.', false, 4000);
-}
-window.open(wapUrl, '_blank');
-fecharModalMsg();
-```
-
-}
-
-function gerarBotoes(c){
-return msgs.map(msg=>{
-const texto = processarMsg(msg.texto, t, c);
-const ehIndicacao = msg.label.toLowerCase().includes(‘indicação’) || msg.label.toLowerCase().includes(‘indicacao’);
-if(ehIndicacao && imgUrl){
-// Botão especial: compartilha imagem + abre WhatsApp
-return`<button class="msg-modal-send" onclick="enviarComImagemModal('${n}',${JSON.stringify(texto)},${JSON.stringify(c.num)})"> ${wapSvg} <span style="flex:1;text-align:left">${msg.label}</span> <span style="font-family:var(--mono);font-size:9px;opacity:.8;background:rgba(37,211,102,.15);padding:2px 6px;border-radius:4px">📎 + imagem</span> </button>`;
-}
-const url = `https://wa.me/${c.num}?text=${encodeURIComponent(texto)}`;
-return`<a class="msg-modal-send" href="${url}" target="_blank" rel="noopener" onclick="setTimeout(fecharModalMsg,400)"> ${wapSvg}${msg.label} </a>`;
-}).join(’’);
-}
-
-// Cartão: grande, botão de compartilhar separado
-const cardHtml = imgUrl
-? `<div class="msg-modal-card" style="position:relative"> <img src="${imgUrl}" alt="Cartão ${n}" style="width:100%;display:block;border-radius:8px"> <div style="position:absolute;bottom:8px;right:8px"> <button onclick="compartilharImagem('${n}')" style=" background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:8px; padding:6px 10px;font-family:var(--mono);font-size:10px;cursor:pointer; display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px)"> 📤 Compartilhar imagem </button> </div> </div> <p style="font-family:var(--mono);font-size:10px;color:var(--txt3);margin:6px 0 12px;line-height:1.6"> 💡 Ao clicar em <strong>Indicação 📎 + imagem</strong>:<br> 1. A imagem abre em nova aba — <strong>salve-a</strong><br> 2. O texto é copiado automaticamente<br> 3. O WhatsApp abre — cole o texto e anexe a imagem </p>`
-: `<div class="msg-modal-card"><div class="msg-modal-card-empty">Sem cartão para o território ${n}</div></div> <p style="font-family:var(--mono);font-size:10px;color:var(--txt3);margin:6px 0 12px">Importe o cartão na aba Importar.</p>`;
-
-const seletorContato = !contato ? ` <div style="margin-bottom:12px"> <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Selecione o dirigente</div> <select id="modalContatoSel" class="contato-sel" style="width:100%;height:36px" onchange="atualizarModalMsgs('${n}')"> <option value="">— Selecionar —</option> ${contatos.map(c=>`<option value="${esc(c.nome)}">${esc(c.nome)}</option>`).join('')} </select> </div> <div id="modalMsgsBtns" style="display:flex;flex-direction:column;gap:8px"></div>` : ‘’;
-
+// Modal DOM
 const modal = document.createElement(‘div’);
 modal.className = ‘msg-modal-bg’;
 modal.id = ‘msgModal’;
-// Guarda função no window para ser acessível pelo onclick
-window._modalEnviar = (texto, num) => enviarComImagem(texto, num, imgUrl);
-modal.innerHTML = `<div class="msg-modal"> <div class="msg-modal-title">Território ${n} — ${t.desc}</div> <div class="msg-modal-sub">${contatoEfetivo.nome ?`${contatoEfetivo.nome} · ${contatoEfetivo.num}` : 'Selecione o dirigente'}</div> ${cardHtml} ${seletorContato} <div class="msg-modal-btns"> ${contato ? gerarBotoes(contato) : ''} <button class="msg-modal-close" onclick="fecharModalMsg()">Fechar</button> </div> </div>`;
 modal.addEventListener(‘click’, e=>{ if(e.target===modal) fecharModalMsg(); });
+
+// Cartão
+const cardDiv = document.createElement(‘div’);
+cardDiv.className = ‘msg-modal-card’;
+if(imgUrl){
+cardDiv.style.position = ‘relative’;
+const img = document.createElement(‘img’);
+img.src = imgUrl; img.alt = ’Cartão ’+n;
+img.style.cssText = ‘width:100%;display:block;border-radius:8px’;
+cardDiv.appendChild(img);
+const btnShare = document.createElement(‘button’);
+btnShare.innerHTML = ‘📤’;
+btnShare.title = ‘Compartilhar imagem’;
+btnShare.style.cssText = ‘position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer’;
+btnShare.onclick = () => compartilharImagem(n);
+cardDiv.appendChild(btnShare);
+} else {
+cardDiv.innerHTML = ‘<div class="msg-modal-card-empty">Sem cartão para o território ‘+n+’</div>’;
+}
+
+// Monta botões de mensagem para um contato
+function criarBotoesMsgs(c, container){
+container.innerHTML = ‘’;
+msgs.forEach(msg=>{
+const texto = processarMsg(msg.texto, t, c);
+const ehIndicacao = msg.label.toLowerCase().includes(‘indicação’) || msg.label.toLowerCase().includes(‘indicacao’);
+const btn = document.createElement(ehIndicacao && imgUrl ? ‘button’ : ‘a’);
+btn.className = ‘msg-modal-send’;
+btn.innerHTML = wapSvg + ‘<span style="flex:1;text-align:left">’+msg.label+’</span>’ + (ehIndicacao && imgUrl ? ‘<span style="font-family:var(--mono);font-size:9px;opacity:.7">+ 📎</span>’ : ‘’);
+if(ehIndicacao && imgUrl){
+btn._texto = texto; btn._num = c.num;
+btn.onclick = () => enviarComImagemModal(n, btn._texto, btn._num);
+} else {
+btn.href = ‘https://wa.me/’+c.num+’?text=’+encodeURIComponent(texto);
+btn.target = ‘_blank’; btn.rel = ‘noopener’;
+btn.onclick = () => setTimeout(fecharModalMsg, 400);
+}
+container.appendChild(btn);
+});
+const closeBtn = document.createElement(‘button’);
+closeBtn.className = ‘msg-modal-close’;
+closeBtn.textContent = ‘Fechar’;
+closeBtn.onclick = fecharModalMsg;
+container.appendChild(closeBtn);
+}
+
+// Inner card
+const inner = document.createElement(‘div’);
+inner.className = ‘msg-modal’;
+inner.innerHTML = ‘<div class="msg-modal-title">Território ‘+n+’ — ‘+t.desc+’</div>’
++ ‘<div class="msg-modal-sub">’+(contatoEfetivo.nome ? contatoEfetivo.nome+’ · ‘+contatoEfetivo.num : ‘Selecione o dirigente’)+’</div>’;
+inner.appendChild(cardDiv);
+
+if(imgUrl){
+const hint = document.createElement(‘p’);
+hint.style.cssText = ‘font-family:var(–mono);font-size:10px;color:var(–txt3);margin:6px 0 12px;line-height:1.5’;
+hint.innerHTML = ‘💡 Toque em <strong>Indicação</strong> para compartilhar a imagem e abrir o WhatsApp.’;
+inner.appendChild(hint);
+}
+
+// Seletor se não achou contato
+if(!contato){
+const selDiv = document.createElement(‘div’);
+selDiv.style.marginBottom = ‘12px’;
+const selLabel = document.createElement(‘div’);
+selLabel.style.cssText = ‘font-family:var(–mono);font-size:9px;color:var(–txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px’;
+selLabel.textContent = ‘Selecione o dirigente’;
+const sel = document.createElement(‘select’);
+sel.id = ‘modalContatoSel’;
+sel.className = ‘contato-sel’;
+sel.style.cssText = ‘width:100%;height:36px’;
+sel.innerHTML = ‘<option value="">— Selecionar —</option>’ + contatos.map(c=>’<option value="'+esc(c.nome)+'">’+esc(c.nome)+’</option>’).join(’’);
+selDiv.appendChild(selLabel);
+selDiv.appendChild(sel);
+inner.appendChild(selDiv);
+}
+
+const btnsDiv = document.createElement(‘div’);
+btnsDiv.className = ‘msg-modal-btns’;
+btnsDiv.id = ‘modalMsgsBtns’;
+if(contato) criarBotoesMsgs(contato, btnsDiv);
+else {
+const closeBtn = document.createElement(‘button’);
+closeBtn.className = ‘msg-modal-close’;
+closeBtn.textContent = ‘Fechar’;
+closeBtn.onclick = fecharModalMsg;
+btnsDiv.appendChild(closeBtn);
+}
+inner.appendChild(btnsDiv);
+modal.appendChild(inner);
 document.body.appendChild(modal);
+
+// Listener do seletor
+const selEl = document.getElementById(‘modalContatoSel’);
+if(selEl){
+selEl.addEventListener(‘change’, ()=>{
+const c = contatos.find(x=>x.nome===selEl.value);
+if(c) criarBotoesMsgs(c, btnsDiv);
+});
+}
 
 // Carrega imagem do Firestore se não estiver no cache
 if(!imgUrl && db){
 buscarCartaoFirestore(n).then(img=>{
 if(!img) return;
-window._modalEnviar = (texto, num) => enviarComImagem(texto, num, img);
-const cardEl = document.querySelector(’#msgModal .msg-modal-card’);
-if(cardEl) cardEl.outerHTML = `<div class="msg-modal-card" style="position:relative"> <img src="${img}" style="width:100%;display:block;border-radius:8px"> <div style="position:absolute;bottom:8px;right:8px"> <button onclick="compartilharImagem('${n}')" style="background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-family:var(--mono);font-size:10px;cursor:pointer;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px)">📤 Compartilhar imagem</button> </div> </div>`;
+cardDiv.style.position = ‘relative’;
+const imgEl = document.createElement(‘img’);
+imgEl.src = img; imgEl.style.cssText = ‘width:100%;display:block;border-radius:8px’;
+cardDiv.innerHTML = ‘’;
+cardDiv.appendChild(imgEl);
+const btnShare2 = document.createElement(‘button’);
+btnShare2.innerHTML = ‘📤’; btnShare2.title = ‘Compartilhar imagem’;
+btnShare2.style.cssText = ‘position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer’;
+btnShare2.onclick = () => compartilharImagem(n);
+cardDiv.appendChild(btnShare2);
 });
 }
 }
 
-// Chamada pelo onclick gerado dinamicamente
 function enviarComImagemModal(n, texto, num){
 const imgUrl = cardsCache[n] || cards[n] || null;
 window._modalEnviar ? window._modalEnviar(texto, num) : window.open(`https://wa.me/${num}?text=${encodeURIComponent(texto)}`,’_blank’);
