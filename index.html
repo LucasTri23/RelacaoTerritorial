@@ -1614,8 +1614,9 @@ function cardZone(n){
 function renderIndicar(){
   const el=document.getElementById('indicarContent');
   const sb=document.getElementById('statsBar');
+  if(!el){ console.error('indicarContent not found'); return; }
 
-  // Sem Firebase conectado — mostra empty state pedindo configuração
+  // Sem Firebase conectado
   if(!db){
     if(sb) sb.innerHTML='';
     el.innerHTML=`<div class="empty-state">
@@ -2723,7 +2724,11 @@ el.classList.add(‘show’); setTimeout(()=>{ el.classList.remove(‘show’); 
 }
 
 // ── INIT ──
-document.addEventListener(‘DOMContentLoaded’, function(){
+window.addEventListener(‘load’, function(){
+// Diagnóstico: confirma que o JS rodou
+const diagEl = document.getElementById(‘indicarContent’);
+if(diagEl) diagEl.innerHTML=’<div style="padding:20px;font-family:monospace;font-size:12px;color:#a0a0b8">⏳ Iniciando…</div>’;
+
 const cfg=JSON.parse(localStorage.getItem(KEY_CFG)||‘null’);
 
 // Define chaves por projeto ANTES de carregar
