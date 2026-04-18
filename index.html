@@ -2363,26 +2363,45 @@ async function enviarComImagem(texto, num, imgDataUrl){
 const wapUrl = `https://wa.me/${num}?text=${encodeURIComponent(texto)}`;
 
 ```
-if(imgDataUrl){
-  // 1. Copia texto no clipboard
-  try{ await navigator.clipboard.writeText(texto); }catch(e){}
+if(imgDataUrl && navigator.share){
+  try{
+    // Converte dataURL → Blob → File
+    const res  = await fetch(imgDataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], `territorio_${n}.jpg`, {type: blob.type||'image/jpeg'});
 
-  // 2. Abre imagem em nova aba para o usuário salvar/compartilhar
-  const imgWin = window.open(imgDataUrl, '_blank');
+    // Copia o texto no clipboard antes de compartilhar
+    try{ await navigator.clipboard.writeText(texto); }catch(e){}
 
-  // 3. Toast explicando o fluxo
-  toast('📎 Imagem aberta — salve e envie no WhatsApp junto com o texto (já copiado)', false, 5000);
-
-  // 4. Abre WhatsApp após 1.5s (dá tempo de ver a imagem)
-  setTimeout(()=>{
-    window.open(wapUrl, '_blank');
-    fecharModalMsg();
-  }, 1500);
-} else {
-  // Sem imagem: abre WhatsApp direto
-  window.open(wapUrl, '_blank');
-  fecharModalMsg();
+    // Compartilha imagem + texto juntos via Web Share API
+    const shareData = { files:[file], text: texto, title:`Território ${n}` };
+    if(navigator.canShare && navigator.canShare(shareData)){
+      await navigator.share(shareData);
+      fecharModalMsg();
+      return;
+    }
+    // Só imagem (sem texto no share — colar depois)
+    const shareImg = { files:[file], title:`Território ${n}` };
+    if(navigator.canShare && navigator.canShare(shareImg)){
+      try{ await navigator.clipboard.writeText(texto); }catch(e){}
+      toast('Mensagem copiada! Compartilhe a imagem e cole o texto no WhatsApp.', false, 4000);
+      await navigator.share(shareImg);
+      fecharModalMsg();
+      return;
+    }
+  }catch(e){
+    if(e.name==='AbortError'){ return; } // usuário cancelou
+    console.warn('Share API falhou:', e);
+  }
 }
+
+// Fallback: copia texto + abre WhatsApp (sem imagem via URL)
+try{ await navigator.clipboard.writeText(texto); }catch(e){}
+if(imgDataUrl){
+  toast('Mensagem copiada! Abra o WhatsApp, anexe o cartão e cole o texto.', false, 4000);
+}
+window.open(wapUrl, '_blank');
+fecharModalMsg();
 ```
 
 }
@@ -2762,5 +2781,6 @@ if(hint) hint.innerHTML=’<p class="chint" style="color:var(--orange)">⚠ Conf
 });
 
 </script>
+
 </body>
 </html>
