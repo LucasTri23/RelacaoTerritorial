@@ -25,7 +25,7 @@
 body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
 
 /* NAV */
-.nav{position:sticky;top:0;z-index:100;background:rgba(15,15,19,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(–brd)}
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,15,19,.98);backdrop-filter:blur(12px);border-bottom:1px solid var(–brd)}
 .nav-inner{display:flex;align-items:center;gap:10px;padding:10px 16px}
 .nav-logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(–accent),#5b4fd4);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .nav-logo svg{width:18px;height:18px;fill:#fff}
@@ -39,7 +39,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:10
 /* TABS */
 .tabs{display:flex;overflow-x:auto;padding:0 16px;border-bottom:1px solid var(–brd);scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
-.tab{font-family:var(–mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:12px 14px;cursor:pointer;color:var(–txt3);border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;user-select:none;background:none;border-left:none;border-right:none;border-top:none}
+.tab{font-family:var(–mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:12px 14px;cursor:pointer;color:var(–txt3);border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;user-select:none;background:none;border:none;-webkit-appearance:none;appearance:none}
 .tab.on{color:var(–accent2);border-bottom-color:var(–accent)}
 .tab:hover{color:var(–txt2)}
 
@@ -837,14 +837,19 @@ function renderDL(){
 function renderIndicar(){
   const el=document.getElementById('indicarContent');
   const sb=document.getElementById('statsBar');
+  // Se não tem Firebase mas tem dados locais, mostra os dados
+  // Se não tem dados, mostra aviso para configurar
   if(!db){
     if(sb)sb.innerHTML='';
-    el.innerHTML='<div class="empty-state"><div class="es-icon">🔌</div><div class="es-title">Não conectado</div><div class="es-sub">Vá em <strong>Config</strong> e conecte ao Firebase.</div></div>';
+    el.innerHTML='<div class="empty-state"><div class="es-icon">🔌</div><div class="es-title">Não conectado</div><div class="es-sub">Cole as credenciais do Firebase na aba Config.</div><div style="margin-top:20px"><button id="btnGoConfig" style="font-family:var(--mono);font-size:13px;font-weight:700;padding:12px 28px;border-radius:12px;background:var(--accent);color:#fff;border:none;cursor:pointer;touch-action:manipulation">Abrir Config</button></div></div>';
+    var gc=document.getElementById('btnGoConfig');
+    if(gc) gc.onclick=function(){switchTab('config');};
     return;
   }
   if(!dados.length){
     if(sb)sb.innerHTML='';
-    el.innerHTML='<div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Nenhum dado</div><div class="es-sub">Vá em <strong>Importar</strong> e carregue a planilha .xlsx</div></div>';
+    const hint = db ? 'Vá em <strong>Importar</strong> e carregue a planilha .xlsx' : 'Vá em <strong>Config</strong> e conecte ao Firebase primeiro.';
+    el.innerHTML='<div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Nenhum dado carregado</div><div class="es-sub">'+hint+'</div></div>';
     return;
   }
   if(sb) sb.innerHTML=renderDashHeader();
@@ -1325,8 +1330,16 @@ carregarTudo();
 if(cfg&&cfg.apiKey){ try{document.getElementById(‘cA’).value=cfg.apiKey;document.getElementById(‘cP’).value=cfg.projectId||’’;document.getElementById(‘cI’).value=cfg.appId||’’;}catch(e){} }
 try{const ci=document.getElementById(‘cfgCong’);if(ci&&congName)ci.value=congName;}catch(e){}
 renderAll();
-if(cfg&&cfg.apiKey&&cfg.projectId&&cfg.appId){ conectarFirebase(); }
-else { setSyncStatus(‘offline’); }
+if(cfg&&cfg.apiKey&&cfg.projectId&&cfg.appId){
+conectarFirebase();
+} else {
+setSyncStatus(‘offline’);
+// Show config hint on indicar tab
+const el=document.getElementById(‘indicarContent’);
+const sb=document.getElementById(‘statsBar’);
+if(sb)sb.innerHTML=’’;
+if(el)el.innerHTML=’<div class="empty-state"><div class="es-icon">🔌</div><div class="es-title">Configure o Firebase</div><div class="es-sub">Vá em <strong>Config</strong>, cole as credenciais e toque em Conectar.</div></div>’;
+}
 });
 </script>
 
