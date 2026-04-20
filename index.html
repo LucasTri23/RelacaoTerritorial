@@ -6,7 +6,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Territórios S-13</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap"></noscript>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -19,13 +20,15 @@
   --green:#4ecb8d;--red:#f06a6a;--orange:#e8914a;--blue:#5ba8f5;--wap:#25D366;
   --green-bg:rgba(78,203,141,.1);--red-bg:rgba(240,106,106,.1);--orange-bg:rgba(232,145,74,.1);--blue-bg:rgba(91,168,245,.1);
   --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:20px;
-  --display:'Syne',sans-serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --display:'Syne',system-ui,sans-serif;--sans:'DM Sans',system-ui,sans-serif;--mono:'DM Mono',monospace;
 }
+/* Safari/iOS fixes */
+* { -webkit-text-size-adjust:100%; }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
 
 /* NAV */
-.nav{position:sticky;top:0;z-index:100;background:rgba(15,15,19,.98);backdrop-filter:blur(12px);border-bottom:1px solid var(–brd)}
+.nav{position:sticky;top:0;z-index:50;background:#0f0f13;border-bottom:1px solid #2a2a38}
 .nav-inner{display:flex;align-items:center;gap:10px;padding:10px 16px}
 .nav-logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(–accent),#5b4fd4);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .nav-logo svg{width:18px;height:18px;fill:#fff}
@@ -44,7 +47,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:10
 .tab:hover{color:var(–txt2)}
 
 /* PANELS */
-.main{padding:0 12px 80px;max-width:680px;margin:0 auto}
+.main{padding:0 12px 80px;max-width:680px;margin:0 auto;position:relative;z-index:1}
 .panel{display:none;padding-top:16px}.panel.on{display:block}
 
 /* CARDS */
