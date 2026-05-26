@@ -1042,6 +1042,43 @@ datalist{display:none}
     </div>
   </div>
 
+  <!-- GERENCIAR TERRITÓRIOS -->
+  <div class="ccard">
+    <div class="ctit">Gerenciar Territórios</div>
+    <p class="chint" style="margin-bottom:10px">Adicionar novo território ao banco de dados.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em">Número</label>
+        <input class="inp" id="addTerrN" placeholder="Ex: 45" style="width:80px;height:34px;font-family:var(--mono)">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px">
+        <label style="font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em">Bairro / Descrição</label>
+        <input class="inp" id="addTerrDesc" placeholder="Ex: Centro" style="height:34px">
+      </div>
+      <label class="card-upload-btn" style="margin:0;padding:0 14px;height:34px;border-radius:var(--r-sm);flex-shrink:0">
+        <span id="addTerrImgTxt">📎 Imagem</span>
+        <input type="file" accept="image/*" id="addTerrImg" onchange="document.getElementById('addTerrImgTxt').textContent='✓ '+this.files[0]?.name.slice(0,12)">
+      </label>
+      <button class="btn btn-sv" onclick="addTerrNovo()" style="height:34px">Adicionar</button>
+    </div>
+    <div style="border-top:1px solid var(--brd);padding-top:14px">
+      <p class="chint" style="margin-bottom:10px">Renumerar território existente (altera número e imagem no banco).</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em">Número atual</label>
+          <select class="inp" id="renumAtual" style="height:34px;cursor:pointer;min-width:170px">
+            <option value="">— Selecionar —</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em">Novo número</label>
+          <input class="inp" id="renumNovo" placeholder="Ex: 46" style="width:100px;height:34px;font-family:var(--mono)">
+        </div>
+        <button class="btn btn-sv" onclick="renumerarTerr()" style="height:34px">Renumerar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- DADOS -->
   <div class="ccard">
     <div class="ctit">Dados locais</div>
@@ -2373,6 +2410,74 @@ function renderCampanhas(){
     </div>`).join('');
 }
 
+// ── GERENCIAR TERRITÓRIOS ──
+async function addTerrNovo(){
+  const n    = document.getElementById('addTerrN').value.trim();
+  const desc = document.getElementById('addTerrDesc').value.trim();
+  const imgFile = document.getElementById('addTerrImg').files[0];
+  if(!n || !desc){ toast('Preencha número e bairro', true); return; }
+  if(dados.find(x=>x.n===n)){ toast('Território '+n+' já existe', true); return; }
+  dados.push({n, desc, designacoes:[]});
+  salvarDados();
+  const resetForm = ()=>{
+    document.getElementById('addTerrN').value='';
+    document.getElementById('addTerrDesc').value='';
+    document.getElementById('addTerrImg').value='';
+    document.getElementById('addTerrImgTxt').textContent='📎 Imagem';
+    preencherRenumSelect(); renderAll();
+  };
+  if(imgFile){
+    toast('Comprimindo imagem…');
+    comprimirImagem(imgFile, async dataURL=>{
+      if(db) await salvarCartaoFirestore(n, dataURL);
+      await pushFB();
+      toast('Território '+n+' adicionado com imagem ✓');
+      resetForm();
+    });
+  } else {
+    await pushFB();
+    toast('Território '+n+' adicionado ✓');
+    resetForm();
+  }
+}
+
+async function renumerarTerr(){
+  const atual = document.getElementById('renumAtual').value;
+  const novo  = document.getElementById('renumNovo').value.trim();
+  if(!atual){ toast('Selecione o território atual', true); return; }
+  if(!novo){  toast('Digite o novo número', true); return; }
+  if(atual===novo){ toast('O número já é esse', true); return; }
+  if(dados.find(x=>x.n===novo)){ toast('Território '+novo+' já existe', true); return; }
+  const t = dados.find(x=>x.n===atual);
+  if(!t){ toast('Território não encontrado', true); return; }
+  t.n = novo;
+  salvarDados();
+  if(db){
+    try{
+      const snapOld = await db.collection('tj_cards').doc(String(atual)).get();
+      if(snapOld.exists){
+        const img = snapOld.data().img;
+        await db.collection('tj_cards').doc(String(novo)).set({img, updatedAt:new Date().toISOString()});
+        await db.collection('tj_cards').doc(String(atual)).delete();
+      }
+    }catch(e){ console.error('Erro ao mover imagem:', e); }
+  }
+  if(cardsCache[atual]){ cardsCache[novo]=cardsCache[atual]; delete cardsCache[atual]; }
+  if(cards[atual])     { cards[novo]=cards[atual];           delete cards[atual];      salvarCards(); }
+  await pushFB();
+  toast('Renumerado: '+atual+' → '+novo+' ✓');
+  document.getElementById('renumAtual').value='';
+  document.getElementById('renumNovo').value='';
+  preencherRenumSelect(); renderAll();
+}
+
+function preencherRenumSelect(){
+  const sel = document.getElementById('renumAtual'); if(!sel) return;
+  const ordered = [...dados].sort((a,b)=>parseInt(a.n)-parseInt(b.n)||String(a.n).localeCompare(String(b.n)));
+  sel.innerHTML = '<option value="">— Selecionar —</option>'+
+    ordered.map(t=>`<option value="${esc(t.n)}">${t.n} — ${esc(t.desc)}</option>`).join('');
+}
+
 // ── TABS ──
 function switchTab(t){
   document.querySelectorAll('.ntab').forEach((el,i)=>el.classList.toggle('active',['indicar','registrar','historico','stats','importar','config'][i]===t));
@@ -2381,7 +2486,7 @@ function switchTab(t){
   activeTab=t;
   if(t==='registrar') renderRegistrar();
   else if(t==='historico') renderHist();
-  else if(t==='config'){ renderContatos(); renderMensagens(); renderCampanhas(); atualizarStatusCard(); const ci=document.getElementById('cfgCong'); if(ci) ci.value=congName||''; }
+  else if(t==='config'){ renderContatos(); renderMensagens(); renderCampanhas(); atualizarStatusCard(); preencherRenumSelect(); const ci=document.getElementById('cfgCong'); if(ci) ci.value=congName||''; }
   else if(t==='stats') renderStats();
 }
 
