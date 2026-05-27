@@ -1476,19 +1476,19 @@ function wapButtons(n, desc){
 // Cache local em memória {n: dataURL}
 const cardsCache = {};
 
-// Comprime imagem para JPEG q=0.5, max 600px — fica ~30-60KB
+// Comprime imagem para JPEG q=0.88, max 1600px — fica ~150-400KB
 function comprimirImagem(file, callback){
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      const MAX = 600;
+      const MAX = 1600;
       let w = img.width, h = img.height;
       if(w > MAX){ h = Math.round(h*MAX/w); w = MAX; }
       const canvas = document.createElement('canvas');
       canvas.width=w; canvas.height=h;
       canvas.getContext('2d').drawImage(img,0,0,w,h);
-      callback(canvas.toDataURL('image/jpeg', 0.5));
+      callback(canvas.toDataURL('image/jpeg', 0.88));
     };
     img.src = e.target.result;
   };
